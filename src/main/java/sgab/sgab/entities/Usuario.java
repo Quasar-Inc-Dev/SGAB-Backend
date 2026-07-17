@@ -7,8 +7,6 @@ import lombok.Setter;
 import sgab.sgab.entities.valueobjects.validation.cpf.ValidCpf;
 import sgab.sgab.entities.valueobjects.validation.email.ValidEmail;
 
-import jakarta.validation.constraints.NotBlank;
-
 @Entity
 @Table(name = "usuario")
 @Getter
