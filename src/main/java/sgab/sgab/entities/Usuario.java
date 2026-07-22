@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import sgab.sgab.entities.Enum.TipoUsuario;
 import sgab.sgab.entities.valueobjects.validation.cpf.ValidCpf;
 import sgab.sgab.entities.valueobjects.validation.email.ValidEmail;
 
@@ -31,4 +32,8 @@ public class Usuario {
 
     @Column(name = "status_usuario", nullable = false)
     private Boolean statusUsuario = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_usuario", nullable = false)
+    private TipoUsuario tipoUsuario;
 }

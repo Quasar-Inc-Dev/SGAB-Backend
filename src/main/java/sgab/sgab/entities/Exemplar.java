@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import sgab.sgab.entities.Enum.StatusExemplar;
 
 import java.time.LocalDateTime;
 

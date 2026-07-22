@@ -1,4 +1,4 @@
-package sgab.sgab.entities;
+package sgab.sgab.entities.Enum;
 
 public enum StatusExemplar {
     DISPONIVEL,
