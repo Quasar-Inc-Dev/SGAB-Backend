@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, String> {
     @Query("SELECT u FROM Usuario u WHERE u.cpf = :cpf")
-    List<Usuario> buscarUsuarioPorCPF(@Param("CPF") String CPF);
+    List<Usuario> buscarUsuarioPorCPF(@Param("cpf") String cpf);
 
     boolean existsByEmail(String email);
     boolean existsByCpf(String cpf);

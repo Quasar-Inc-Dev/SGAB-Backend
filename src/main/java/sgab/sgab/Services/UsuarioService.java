@@ -3,11 +3,9 @@ package sgab.sgab.Services;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import jakarta.transaction.Transactional;
 import sgab.sgab.Repositories.UsuarioRepository;
-import sgab.sgab.dtos.request.UsuarioRequestDTO;
-import sgab.sgab.dtos.response.UsuarioResponseDTO;
 import sgab.sgab.entities.Usuario;
+import sgab.sgab.entities.Enum.TipoUsuario;
 import sgab.sgab.exceptions.CpfDuplicadoExeception;
 import sgab.sgab.exceptions.EmailDuplicadoException;
 
@@ -21,35 +19,27 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @Transactional
-    public UsuarioResponseDTO cadastrar(UsuarioRequestDTO dto){
-        validarDuplicidade(dto);
+    protected Usuario criarUsuarioBase(String cpf, String nome, String email, String senha, TipoUsuario tipo) {
+        validarDuplicidade(cpf, email);
 
         Usuario usuario = new Usuario();
-
-        usuario.setCpf(dto.cpf());
-        usuario.setNome(dto.nome());
-        usuario.setEmail(dto.email());
-        usuario.setSenha(passwordEncoder.encode(dto.senha()));
-        usuario.setTipoUsuario(dto.tipoUsuario());
+        usuario.setCpf(cpf);
+        usuario.setNome(nome);
+        usuario.setEmail(email);
+        usuario.setSenha(passwordEncoder.encode(senha));
+        usuario.setTipoUsuario(tipo);
         usuario.setStatusUsuario(true);
 
-        Usuario salvo = usuarioRepository.save(usuario);
-
-        return toResponseDTO(salvo);
+        return usuarioRepository.save(usuario);
     }
 
-    public void validarDuplicidade(UsuarioRequestDTO dto) {
-        if (usuarioRepository.existsByCpf(dto.cpf())) {
+    public void validarDuplicidade(String cpf, String email) {
+        if (usuarioRepository.existsByCpf(cpf)) {
             throw new CpfDuplicadoExeception("CPF já cadastrado!");
         }
 
-        if (usuarioRepository.existsByEmail(dto.email())) {
+        if (usuarioRepository.existsByEmail(email)) {
             throw new EmailDuplicadoException("Email já cadastrado!");
         }
-    }
-
-    private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
-        return new UsuarioResponseDTO(usuario.getCpf(), usuario.getNome(), usuario.getEmail(), usuario.getStatusUsuario());
     }
 }

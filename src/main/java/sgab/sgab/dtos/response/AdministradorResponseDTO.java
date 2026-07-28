@@ -1,8 +1,8 @@
 package sgab.sgab.dtos.response;
 
-public record UsuarioResponseDTO(
+public record AdministradorResponseDTO (
     String cpf,
     String nome,
     String email,
-    Boolean statusUsuario
+    Boolean statusAdministrador
 ){}
