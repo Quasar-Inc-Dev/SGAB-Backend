@@ -12,13 +12,16 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Administrador {
 
+    
     @Id
+    private Integer id;
+
     @Column(length = 11)
     private String cpf;
 
     @OneToOne
     @MapsId
-    @JoinColumn(name = "cpf")
+    @JoinColumn(name = "id")
     private Usuario usuario;
 
     @Column(name = "status_administrador", nullable = false)

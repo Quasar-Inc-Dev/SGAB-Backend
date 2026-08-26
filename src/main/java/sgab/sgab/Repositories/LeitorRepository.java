@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import sgab.sgab.entities.Leitor;
 
-public interface LeitorRepository extends JpaRepository<Leitor, String> {
+public interface LeitorRepository extends JpaRepository<Leitor, Integer> {
 
     @Query("SELECT l FROM Leitor l Where l.cpf = :cpf")
     List<Leitor> buscarLeitorPorCpf(@Param("cpf") String cpf);

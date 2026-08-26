@@ -33,6 +33,8 @@ public class SecurityConfig {
                         .requestMatchers(h2Console).permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuarios/cadastro/leitor").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuarios/buscar").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )

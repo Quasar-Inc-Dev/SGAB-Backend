@@ -16,6 +16,9 @@ import sgab.sgab.entities.valueobjects.validation.email.ValidEmail;
 public class Usuario {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
     @ValidCpf
     @Column(length = 11, nullable = false)
     private String cpf;

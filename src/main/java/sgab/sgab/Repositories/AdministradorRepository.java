@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import sgab.sgab.entities.Administrador;
 
-public interface AdministradorRepository extends JpaRepository <Administrador, String> {
+public interface AdministradorRepository extends JpaRepository <Administrador, Integer> {
     
     @Query("SELECT a from Administrador a where a.cpf = :cpf")
     List<Administrador> buscarAdminPorCPF(@Param("cpf") String cpf);

@@ -27,12 +27,13 @@ public class AdministradorService {
 
         Administrador administrador = new Administrador();
         administrador.setUsuario(usuario);
+        administrador.setCpf(dto.cpf());
         administrador.setStatusAdministrador(true);
 
         Administrador salvo = adminRepository.save(administrador);
 
         return new AdministradorResponseDTO(
-            usuario.getCpf(), usuario.getNome(), usuario.getEmail(),
+            usuario.getId(), usuario.getCpf(), usuario.getNome(), usuario.getEmail(),
             salvo.getStatusAdministrador()
         );
     }

@@ -28,12 +28,13 @@ public class FuncionarioService {
         funcionario.setUsuario(usuario);
         funcionario.setMatricula(dto.matricula());
         funcionario.setDataContratacao(dto.dataContratacao());
+        funcionario.setCpf(dto.cpf());
         funcionario.setStatusFuncionario(true);
 
         Funcionario salvo = funcionarioRepository.save(funcionario);
 
         return new FuncionarioResponseDTO(
-            usuario.getCpf(), usuario.getNome(), usuario.getEmail(),
+            usuario.getId(), usuario.getCpf(), usuario.getNome(), usuario.getEmail(),
             salvo.getMatricula(), salvo.getDataContratacao(), salvo.getStatusFuncionario()
         );
     }

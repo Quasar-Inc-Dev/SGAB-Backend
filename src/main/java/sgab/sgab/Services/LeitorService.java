@@ -31,12 +31,13 @@ public class LeitorService {
         leitor.setGenero(dto.genero());
         leitor.setDataNascimento(dto.dataNascimento());
         leitor.setTipoLeitor(dto.tipoLeitor());
+        leitor.setCpf(dto.cpf());
         leitor.setStatusLeitor(true);
 
         Leitor salvo = leitorRepository.save(leitor);
 
         return new LeitorResponseDTO(
-                usuario.getCpf(), usuario.getNome(), usuario.getEmail(),
+                usuario.getId(), usuario.getCpf(), usuario.getNome(), usuario.getEmail(),
                 salvo.getGenero(), salvo.getDataNascimento(), salvo.getTipoLeitor(), salvo.getStatusLeitor()
         );
     }

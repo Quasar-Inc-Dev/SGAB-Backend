@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import sgab.sgab.entities.Funcionario;
 
-public interface FuncionarioRepository extends JpaRepository <Funcionario, String> {
+public interface FuncionarioRepository extends JpaRepository <Funcionario, Integer> {
     
     @Query("SELECT f from Funcionario f where f.cpf = :cpf")
     List<Funcionario> buscarFuncionarioPorCPF(@Param("cpf") String cpf);

@@ -1,12 +1,16 @@
 package sgab.sgab.Services;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import sgab.sgab.Repositories.UsuarioRepository;
+import sgab.sgab.dtos.response.CpfNaoEncontradoResponseDTO;
 import sgab.sgab.entities.Usuario;
 import sgab.sgab.entities.Enum.TipoUsuario;
 import sgab.sgab.exceptions.CpfDuplicadoExeception;
+import sgab.sgab.exceptions.CpfNaoEncontrado;
 import sgab.sgab.exceptions.EmailDuplicadoException;
 
 @Service
@@ -32,6 +36,16 @@ public class UsuarioService {
 
         return usuarioRepository.save(usuario);
     }
+
+    public CpfNaoEncontradoResponseDTO buscarPorCpf(String cpf) {
+        Usuario usuario = usuarioRepository.findByCpf(cpf)
+            .orElseThrow(() -> new CpfNaoEncontrado("CPF de usuário não encontrado na base de dados!"));
+
+        return new CpfNaoEncontradoResponseDTO(
+            usuario.getId(), usuario.getCpf(), usuario.getNome(), 
+            usuario.getEmail(), usuario.getTipoUsuario(), usuario.getStatusUsuario()
+        );
+    } 
 
     public void validarDuplicidade(String cpf, String email) {
         if (usuarioRepository.existsByCpf(cpf)) {

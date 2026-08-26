@@ -14,12 +14,14 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Leitor {
     @Id
+    private Integer id;
+
     @Column(length = 11)
     private String cpf;
 
     @OneToOne
     @MapsId
-    @JoinColumn(name = "cpf")
+    @JoinColumn(name = "id")
     private Usuario usuario;
 
     @Column(nullable = false, length = 50)
