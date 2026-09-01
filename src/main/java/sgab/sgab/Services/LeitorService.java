@@ -9,6 +9,7 @@ import sgab.sgab.dtos.response.LeitorResponseDTO;
 import sgab.sgab.entities.Leitor;
 import sgab.sgab.entities.Usuario;
 import sgab.sgab.entities.Enum.TipoUsuario;
+import sgab.sgab.exceptions.CpfNaoEncontrado;
 
 @Service
 public class LeitorService {
@@ -40,5 +41,16 @@ public class LeitorService {
                 usuario.getId(), usuario.getCpf(), usuario.getNome(), usuario.getEmail(),
                 salvo.getGenero(), salvo.getDataNascimento(), salvo.getTipoLeitor(), salvo.getStatusLeitor()
         );
+    }
+
+    @Transactional
+        public void desativar(Integer id) {
+            Leitor leitor = leitorRepository.findById(id)
+                .orElseThrow(() -> new CpfNaoEncontrado("Usuário não encotrado na base de dados!"));
+
+            leitor.setStatusLeitor(false);
+            leitorRepository.save(leitor);
+
+            usuarioService.desativarUsuario(leitor.getId());
     }
 }

@@ -11,6 +11,8 @@ import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.security.web.SecurityFilterChain;
 
 //Configuração para liberação do h2 database em ambiente de desenvolvimento. Quando for para produção ela deve ser alterada.
+//localhost:8080/h2-console
+//localhost:8080/swagger-ui/index.html
 
 @Configuration
 public class SecurityConfig {
@@ -34,7 +36,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro/leitor").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/usuarios/buscar").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuarios/buscarPorCpf").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/usuario/deletar/{id}").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
