@@ -2,7 +2,6 @@ package sgab.sgab.controllers;
 
 import java.util.List;
 
-import org.apache.catalina.connector.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,10 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import sgab.sgab.Services.LeitorService;
 import sgab.sgab.dtos.response.LeitorResponseDTO;
-import sgab.sgab.entities.Leitor;
 
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController

@@ -1,18 +1,12 @@
 package sgab.sgab.Services;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 import jakarta.transaction.Transactional;
-import sgab.sgab.Repositories.FuncionarioRepository;
-import sgab.sgab.Repositories.LeitorRepository;
 import sgab.sgab.Repositories.UsuarioRepository;
 import sgab.sgab.dtos.response.CpfNaoEncontradoResponseDTO;
 import sgab.sgab.entities.Usuario;
-import sgab.sgab.entities.Funcionario;
-import sgab.sgab.entities.Leitor;
 import sgab.sgab.entities.Enum.TipoUsuario;
 import sgab.sgab.exceptions.CpfDuplicadoExeception;
 import sgab.sgab.exceptions.CpfNaoEncontrado;
@@ -23,18 +17,11 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // private final LeitorRepository leitorRepository;
-    // private final FuncionarioRepository funcionarioRepository;
-
     public UsuarioService(UsuarioRepository usuarioRepository, 
         PasswordEncoder passwordEncoder 
-        // LeitorRepository leitorRepository,
-        // FuncionarioRepository funcionarioRepository
         ){
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
-        // this.leitorRepository = leitorRepository;
-        // this.funcionarioRepository = funcionarioRepository;
     }
 
     protected Usuario criarUsuarioBase(String cpf, String nome, String email, String senha, TipoUsuario tipo) {
@@ -65,15 +52,6 @@ public class UsuarioService {
     public void desativarUsuario(Integer id){
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new CpfNaoEncontrado("Usuário não encontrado"));
-
-        // Leitor leitor = leitorRepository.findById(id).orElseThrow();
-        // Funcionario funcionario = funcionarioRepository.findById(id).orElseThrow();
-
-        // if (!leitorRepository.findById(id).isEmpty())
-        //     leitor.setStatusLeitor(false);
-
-        // if (!funcionarioRepository.findById(id).isEmpty())
-        //     funcionario.setStatusFuncionario(false);
 
         usuario.setStatusUsuario(false);
         usuarioRepository.save(usuario);
