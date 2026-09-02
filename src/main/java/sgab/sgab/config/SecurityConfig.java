@@ -5,10 +5,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.core.userdetails.User;
 
 //Configuração para liberação do h2 database em ambiente de desenvolvimento. Quando for para produção ela deve ser alterada.
 //localhost:8080/h2-console
@@ -37,12 +41,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro/leitor").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/buscarPorCpf").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/usuario/deletar/{id}").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/leitor/desativar/{id}").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(basic -> {}); 
 
         return http.build();
+    }
+
+    //Configurando a senha do BPass para usar o usuário admin no Spring Security
+    @Bean
+    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+        UserDetails admin = User.withUsername("admin")
+            .password(passwordEncoder.encode("FsHm2026"))
+            .roles("ADMIN")
+            .build();
+
+        return new InMemoryUserDetailsManager(admin);
     }
 }

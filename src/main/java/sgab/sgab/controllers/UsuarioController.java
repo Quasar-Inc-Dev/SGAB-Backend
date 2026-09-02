@@ -2,6 +2,7 @@ package sgab.sgab.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import sgab.sgab.Services.AdministradorService;
 import sgab.sgab.Services.FuncionarioService;
@@ -26,7 +27,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
-@RequestMapping
+@RequestMapping("api/usuario")
+@Tag(name = "Usuários", description = "Gerenciamento de usuários no sistema")
 public class UsuarioController{
     private final LeitorService leitorService;
     private final FuncionarioService funcionarioService;
@@ -69,6 +71,4 @@ public class UsuarioController{
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-
 }

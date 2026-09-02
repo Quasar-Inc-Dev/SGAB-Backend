@@ -10,6 +10,6 @@ import sgab.sgab.entities.Leitor;
 
 public interface LeitorRepository extends JpaRepository<Leitor, Integer> {
 
-    @Query("SELECT l FROM Leitor l Where l.cpf = :cpf")
-    List<Leitor> buscarLeitorPorCpf(@Param("cpf") String cpf);
+    @Query("SELECT l FROM Leitor l")
+    List<Leitor> buscarLeitor();
 }

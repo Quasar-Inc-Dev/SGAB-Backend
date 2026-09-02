@@ -1,5 +1,7 @@
 package sgab.sgab.Services;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -52,5 +54,17 @@ public class LeitorService {
             leitorRepository.save(leitor);
 
             usuarioService.desativarUsuario(leitor.getId());
+    }
+
+    public List<LeitorResponseDTO> listarTodos() {
+        List<Leitor> leitores = leitorRepository.findAll();
+
+        return leitores.stream()
+            .map(leitor -> new LeitorResponseDTO(
+                leitor.getUsuario().getId(), leitor.getCpf(),
+                leitor.getUsuario().getNome(), leitor.getUsuario().getEmail(),
+                leitor.getGenero(), leitor.getDataNascimento(),
+                leitor.getTipoLeitor(), leitor.getStatusLeitor()
+            )).toList();
     }
 }
