@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
-@RequestMapping("api/usuario")
+@RequestMapping("/api/usuario/usuarios")
 @Tag(name = "Usuários", description = "Gerenciamento de usuários no sistema")
 public class UsuarioController{
     private final LeitorService leitorService;
@@ -41,21 +41,21 @@ public class UsuarioController{
         this.usuarioService = usuarioService;
     }
 
-    @PostMapping("usuarios/cadastro/leitor")
+    @PostMapping("/cadastro/leitor")
     public ResponseEntity<LeitorResponseDTO> cadastroLeitor(@RequestBody @Valid LeitorRequestDTO dto) {
         LeitorResponseDTO response = leitorService.cadastrar(dto);
         
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-    @PostMapping("usuarios/cadastro/funcionario")
+    @PostMapping("/cadastro/funcionario")
     public ResponseEntity<FuncionarioResponseDTO> cadastroFuncionario(@RequestBody @Valid FuncionarioRequestDTO dto){
         FuncionarioResponseDTO response = funcionarioService.cadastrar(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("usuarios/cadastro/administrador")
+    @PostMapping("/cadastro/administrador")
     public ResponseEntity<AdministradorResponseDTO> cadastroAdm(@RequestBody @Valid AdministradorRequestDTO dto){
         AdministradorResponseDTO response = administradorService.cadastrar(dto);
 
@@ -63,7 +63,7 @@ public class UsuarioController{
     }
 
     
-    @PostMapping("usuarios/buscarPorCpf")
+    @PostMapping("/buscarPorCpf")
     public ResponseEntity<CpfNaoEncontradoResponseDTO> buscarLeitorPorCPF(@RequestBody @Valid UsuarioRequestDTO request) {
         CpfNaoEncontradoResponseDTO response = usuarioService.buscarPorCpf(request.cpf());
 

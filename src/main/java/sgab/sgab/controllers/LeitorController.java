@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 
 @RestController
-@RequestMapping("api/leitor")
+@RequestMapping("/api/leitor/leitor")
 @Tag(name = "Leitores", description = "Gerenciamento de usuários leitores do sistema")
 public class LeitorController {
     private final LeitorService leitorService;
@@ -25,13 +25,13 @@ public class LeitorController {
         this.leitorService = leitorService;
     }
 
-    @DeleteMapping("leitor/desativar/{id}")
+    @DeleteMapping("/desativar/{id}")
     public ResponseEntity<Void> desativarLeitor(@PathVariable Integer id){
         leitorService.desativar(id);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("leitor/buscar")
+    @GetMapping("/buscar")
     public ResponseEntity<List<LeitorResponseDTO>> buscarLeitores() {
         List<LeitorResponseDTO> response = leitorService.listarTodos();
         return ResponseEntity.ok(response);
