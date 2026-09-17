@@ -43,6 +43,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(h2Console).permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/livros/isbn/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/livros/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/livros").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/livros/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/livros/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuario/usuarios/cadastro/leitor").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/buscarPorCpf").permitAll()
@@ -52,7 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(basic -> {}); 
+                .httpBasic(basic -> {});
 
         return http.build();
     }
@@ -62,7 +67,7 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    @Bean 
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:4200"));
