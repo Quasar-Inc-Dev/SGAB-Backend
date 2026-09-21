@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import sgab.sgab.Repositories.LeitorRepository;
 import sgab.sgab.dtos.request.LeitorRequestDTO;
+import sgab.sgab.dtos.request.LeitorUpdateRequestDTO;
 import sgab.sgab.dtos.response.LeitorResponseDTO;
 import sgab.sgab.entities.Leitor;
 import sgab.sgab.entities.Usuario;
@@ -66,5 +67,24 @@ public class LeitorService {
                 leitor.getGenero(), leitor.getDataNascimento(),
                 leitor.getTipoLeitor(), leitor.getStatusLeitor()
             )).toList();
+    }
+
+    @Transactional 
+    public LeitorResponseDTO editar(Integer id, LeitorUpdateRequestDTO dto) {
+        Leitor leitor = leitorRepository.findById(id)
+            .orElseThrow(() -> new CpfNaoEncontrado("Leitor não encontrado"));
+
+        usuarioService.atualizarUsuarioBase(leitor.getUsuario(), dto.nome());
+
+        leitor.setGenero(dto.genero());
+        leitor.setDataNascimento(dto.dataNascimento());
+        leitor.setTipoLeitor(dto.tipoLeitor());
+
+        return new LeitorResponseDTO(
+            leitor.getUsuario().getId(), leitor.getCpf(),
+            leitor.getUsuario().getNome(), leitor.getUsuario().getEmail(),
+            leitor.getGenero(), leitor.getDataNascimento(),
+            leitor.getTipoLeitor(), leitor.getStatusLeitor()
+        );
     }
 }

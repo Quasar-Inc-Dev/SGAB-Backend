@@ -48,6 +48,10 @@ public class UsuarioService {
         );
     } 
 
+    protected  void atualizarUsuarioBase(Usuario usuario, String nome) {
+        usuario.setNome(nome);
+    }
+
     @Transactional
     public void desativarUsuario(Integer id){
         Usuario usuario = usuarioRepository.findById(id)
