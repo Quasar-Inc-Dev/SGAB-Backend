@@ -4,10 +4,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
+
 
 import sgab.sgab.dtos.response.LivroIsbnResponseDTO;
 import sgab.sgab.exceptions.LivroNaoEncontradoException;
@@ -16,8 +18,12 @@ import sgab.sgab.exceptions.LivroNaoEncontradoException;
 public class LivroIsbnService {
 
     private final RestClient restClient;
+    private final String apiKey;
 
-    public LivroIsbnService(RestClient.Builder restClientBuilder) {
+    public LivroIsbnService(RestClient.Builder restClientBuilder,
+        @Value("${google.books.api-key:}") String apiKey
+    ) {
+        this.apiKey = apiKey;
         this.restClient = restClientBuilder
                 .baseUrl("https://www.googleapis.com/books/v1")
                 .build();
@@ -30,6 +36,7 @@ public class LivroIsbnService {
                 .uri(uriBuilder -> uriBuilder
                         .path("/volumes")
                         .queryParam("q", "isbn:" + isbnNormalizado)
+                        .queryParam("key", apiKey)
                         .build())
                 .retrieve()
                 .body(JsonNode.class);
