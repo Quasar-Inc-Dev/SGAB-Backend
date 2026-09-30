@@ -43,7 +43,9 @@ public record LivroRequestDTO(
 
         String area,
 
-        @NotBlank
-        String livroStatus
+        @NotNull
+        Boolean livroStatus,
+
+        String imgUrl
 ) {
 }

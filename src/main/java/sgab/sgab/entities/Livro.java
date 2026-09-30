@@ -28,7 +28,7 @@ public class Livro {
     @Column(nullable = false, length = 50)
     private String titulo;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String subtitulo;
 
     @Column(length = 200)
@@ -40,8 +40,8 @@ public class Livro {
     @Column(nullable = false, length = 100)
     private String editora;
 
-    @Column(name = "livro_status", nullable = false, length = 50)
-    private String livroStatus;
+    @Column(name = "livro_status", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private Boolean livroStatus = true;
 
     @Column(nullable = false, length = 50)
     private String idioma;
@@ -59,4 +59,7 @@ public class Livro {
 
     @Column(columnDefinition = "TEXT")
     private String tags;
+
+    @Column(name = "img_url", length = 200)
+    private String imgUrl;
 }

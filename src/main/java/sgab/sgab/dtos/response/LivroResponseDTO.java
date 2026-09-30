@@ -16,6 +16,7 @@ public record LivroResponseDTO(
         String pha,
         String dewey,
         String area,
-        String livroStatus
+        Boolean livroStatus,
+        String imgUrl
 ) {
 }

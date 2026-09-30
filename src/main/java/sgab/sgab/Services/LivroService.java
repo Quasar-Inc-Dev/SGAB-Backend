@@ -114,6 +114,7 @@ public class LivroService {
         livro.setDewey(dto.dewey());
         livro.setArea(dto.area());
         livro.setLivroStatus(dto.livroStatus());
+        livro.setImgUrl(dto.imgUrl());
     }
 
     private LivroResponseDTO converterParaResponse(Livro livro) {
@@ -133,7 +134,8 @@ public class LivroService {
                 livro.getPha(),
                 livro.getDewey(),
                 livro.getArea(),
-                livro.getLivroStatus()
+                livro.getLivroStatus(),
+                livro.getImgUrl()
         );
     }
 
