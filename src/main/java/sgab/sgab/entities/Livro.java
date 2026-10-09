@@ -40,8 +40,8 @@ public class Livro {
     @Column(nullable = false, length = 100)
     private String editora;
 
-    @Column(name = "livro_status", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    private Boolean livroStatus = true;
+    @Column(name = "livro_status")
+    private String livroStatus;
 
     @Column(nullable = false, length = 50)
     private String idioma;

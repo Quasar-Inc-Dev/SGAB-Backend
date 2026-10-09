@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import sgab.sgab.Services.LivroIsbnService;
-import sgab.sgab.Services.LivroService;
+import sgab.sgab.services.LivroIsbnService;
+import sgab.sgab.services.LivroService;
 import sgab.sgab.dtos.request.LivroRequestDTO;
 import sgab.sgab.dtos.response.LivroIsbnResponseDTO;
 import sgab.sgab.dtos.response.LivroResponseDTO;

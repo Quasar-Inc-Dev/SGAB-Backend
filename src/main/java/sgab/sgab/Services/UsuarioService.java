@@ -1,10 +1,10 @@
-package sgab.sgab.Services;
+package sgab.sgab.services;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import sgab.sgab.Repositories.UsuarioRepository;
+import sgab.sgab.repositories.UsuarioRepository;
 import sgab.sgab.dtos.response.CpfNaoEncontradoResponseDTO;
 import sgab.sgab.entities.Usuario;
 import sgab.sgab.entities.Enum.TipoUsuario;
@@ -17,8 +17,8 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, 
-        PasswordEncoder passwordEncoder 
+    public UsuarioService(UsuarioRepository usuarioRepository,
+        PasswordEncoder passwordEncoder
         ){
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
@@ -43,10 +43,10 @@ public class UsuarioService {
             .orElseThrow(() -> new CpfNaoEncontrado("CPF de usuário não encontrado na base de dados!"));
 
         return new CpfNaoEncontradoResponseDTO(
-            usuario.getId(), usuario.getCpf(), usuario.getNome(), 
+            usuario.getId(), usuario.getCpf(), usuario.getNome(),
             usuario.getEmail(), usuario.getTipoUsuario(), usuario.getStatusUsuario()
         );
-    } 
+    }
 
     protected  void atualizarUsuarioBase(Usuario usuario, String nome) {
         usuario.setNome(nome);

@@ -1,11 +1,11 @@
-package sgab.sgab.Services;
+package sgab.sgab.services;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import sgab.sgab.Repositories.LeitorRepository;
+import sgab.sgab.repositories.LeitorRepository;
 import sgab.sgab.dtos.request.LeitorRequestDTO;
 import sgab.sgab.dtos.request.LeitorUpdateRequestDTO;
 import sgab.sgab.dtos.response.LeitorResponseDTO;
@@ -69,7 +69,7 @@ public class LeitorService {
             )).toList();
     }
 
-    @Transactional 
+    @Transactional
     public LeitorResponseDTO editar(Integer id, LeitorUpdateRequestDTO dto) {
         Leitor leitor = leitorRepository.findById(id)
             .orElseThrow(() -> new CpfNaoEncontrado("Leitor não encontrado"));

@@ -1,9 +1,9 @@
-package sgab.sgab.Services;
+package sgab.sgab.services;
 
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import sgab.sgab.Repositories.FuncionarioRepository;
+import sgab.sgab.repositories.FuncionarioRepository;
 import sgab.sgab.dtos.request.FuncionarioRequestDTO;
 import sgab.sgab.dtos.response.FuncionarioResponseDTO;
 import sgab.sgab.entities.Funcionario;
