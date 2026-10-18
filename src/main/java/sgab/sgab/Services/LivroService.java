@@ -1,11 +1,11 @@
-package sgab.sgab.Services;
+package sgab.sgab.services;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import sgab.sgab.Repositories.LivroRepository;
+import sgab.sgab.repositories.LivroRepository;
 import sgab.sgab.dtos.request.LivroRequestDTO;
 import sgab.sgab.dtos.response.LivroResponseDTO;
 import sgab.sgab.entities.Livro;
@@ -109,6 +109,17 @@ public class LivroService {
                 .orElseThrow(() -> new LivroNaoEncontradoException(
                         "Livro não encontrado"
                 ));
+    }
+
+    @Transactional
+    public LivroResponseDTO desativar(Integer id) {
+        Livro livro = buscarEntidadePorId(id);
+
+        livro.setLivroStatus("INATIVO");
+
+        Livro livroDesativado = livroRepository.save(livro);
+
+        return converterParaResponse(livroDesativado);
     }
 
     private void preencherLivro(

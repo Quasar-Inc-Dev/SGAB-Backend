@@ -1,10 +1,10 @@
-package sgab.sgab.Services;
+package sgab.sgab.services;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import sgab.sgab.Repositories.UsuarioRepository;
+import sgab.sgab.repositories.UsuarioRepository;
 import sgab.sgab.dtos.response.CpfNaoEncontradoResponseDTO;
 import sgab.sgab.dtos.response.UsuarioResponseDTO;
 import sgab.sgab.entities.Usuario;
@@ -18,8 +18,8 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, 
-        PasswordEncoder passwordEncoder 
+    public UsuarioService(UsuarioRepository usuarioRepository,
+        PasswordEncoder passwordEncoder
         ){
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
@@ -57,6 +57,7 @@ public class UsuarioService {
             usuario.getId(), usuario.getCpf(), usuario.getNome(),
             usuario.getEmail(), usuario.getTipoUsuario(), usuario.getStatusUsuario()
         );
+    }
     }
 
     protected  void atualizarUsuarioBase(Usuario usuario, String nome) {

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import sgab.sgab.Services.LeitorService;
+import sgab.sgab.services.LeitorService;
 import sgab.sgab.dtos.request.LeitorUpdateRequestDTO;
 import sgab.sgab.dtos.response.LeitorResponseDTO;
 
@@ -46,5 +46,5 @@ public class LeitorController {
     public ResponseEntity<LeitorResponseDTO> editarLeitor(@PathVariable Integer id, @RequestBody @Valid LeitorUpdateRequestDTO dto) {
         return ResponseEntity.ok(leitorService.editar(id, dto));
     }
-    
+
 }

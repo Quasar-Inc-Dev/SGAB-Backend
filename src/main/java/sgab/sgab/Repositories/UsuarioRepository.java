@@ -1,4 +1,4 @@
-package sgab.sgab.Repositories;
+package sgab.sgab.repositories;
 
 import sgab.sgab.entities.Usuario;
 

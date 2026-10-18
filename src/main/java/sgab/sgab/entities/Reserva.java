@@ -19,8 +19,8 @@ public class Reserva {
     private Integer reservaId;
 
     @ManyToOne
-    @JoinColumn(name = "exemplar_id", nullable = false)
-    private Exemplar exemplar;
+    @JoinColumn(name = "livro_id", nullable = false)
+    private Livro livro;
 
     @ManyToOne
     @JoinColumn(name = "leitor_id", nullable = false)

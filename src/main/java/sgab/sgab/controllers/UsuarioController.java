@@ -4,10 +4,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import sgab.sgab.Services.AdministradorService;
-import sgab.sgab.Services.FuncionarioService;
-import sgab.sgab.Services.LeitorService;
-import sgab.sgab.Services.UsuarioService;
+import sgab.sgab.services.AdministradorService;
+import sgab.sgab.services.FuncionarioService;
+import sgab.sgab.services.LeitorService;
+import sgab.sgab.services.UsuarioService;
 import sgab.sgab.dtos.request.AdministradorRequestDTO;
 import sgab.sgab.dtos.request.FuncionarioRequestDTO;
 import sgab.sgab.dtos.request.LeitorRequestDTO;
@@ -37,7 +37,7 @@ public class UsuarioController{
     private final AdministradorService administradorService;
     private final UsuarioService usuarioService;
 
-    public UsuarioController(LeitorService leitorService, FuncionarioService funcionarioService, 
+    public UsuarioController(LeitorService leitorService, FuncionarioService funcionarioService,
         AdministradorService administradorService, UsuarioService usuarioService){
         this.leitorService = leitorService;
         this.funcionarioService = funcionarioService;
@@ -48,10 +48,10 @@ public class UsuarioController{
     @PostMapping("/cadastro/leitor")
     public ResponseEntity<LeitorResponseDTO> cadastroLeitor(@RequestBody @Valid LeitorRequestDTO dto) {
         LeitorResponseDTO response = leitorService.cadastrar(dto);
-        
+
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-    
+
     @PostMapping("/cadastro/funcionario")
     public ResponseEntity<FuncionarioResponseDTO> cadastroFuncionario(@RequestBody @Valid FuncionarioRequestDTO dto){
         FuncionarioResponseDTO response = funcionarioService.cadastrar(dto);
@@ -66,7 +66,7 @@ public class UsuarioController{
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    
+
     @PostMapping("/buscarPorCpf")
     public ResponseEntity<CpfNaoEncontradoResponseDTO> buscarLeitorPorCPF(@RequestBody @Valid UsuarioRequestDTO request) {
         CpfNaoEncontradoResponseDTO response = usuarioService.buscarPorCpf(request.cpf());

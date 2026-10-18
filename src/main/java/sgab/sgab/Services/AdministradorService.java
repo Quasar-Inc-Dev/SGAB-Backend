@@ -1,9 +1,9 @@
-package sgab.sgab.Services;
+package sgab.sgab.services;
 
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import sgab.sgab.Repositories.AdministradorRepository;
+import sgab.sgab.repositories.AdministradorRepository;
 import sgab.sgab.dtos.request.AdministradorRequestDTO;
 import sgab.sgab.dtos.response.AdministradorResponseDTO;
 import sgab.sgab.entities.Administrador;
@@ -22,7 +22,7 @@ public class AdministradorService {
 
     @Transactional
     public AdministradorResponseDTO cadastrar(AdministradorRequestDTO dto) {
-        Usuario usuario = usuarioService.criarUsuarioBase(dto.cpf(), 
+        Usuario usuario = usuarioService.criarUsuarioBase(dto.cpf(),
        dto.nome(), dto.email(), dto.senha(), TipoUsuario.ADMINISTRADOR);
 
         Administrador administrador = new Administrador();

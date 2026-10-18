@@ -3,11 +3,11 @@ package sgab.sgab.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import sgab.sgab.Repositories.UsuarioRepository;
-import sgab.sgab.Services.AdministradorService;
+import sgab.sgab.repositories.UsuarioRepository;
+import sgab.sgab.services.AdministradorService;
 import sgab.sgab.dtos.request.AdministradorRequestDTO;
 
-@Component 
+@Component
 public class AdminSeeder implements CommandLineRunner {
     private final AdministradorService administradorService;
     private final UsuarioRepository usuarioRepository;
@@ -17,7 +17,7 @@ public class AdminSeeder implements CommandLineRunner {
         this.usuarioRepository = usuarioRepository;
     }
 
-    @Override 
+    @Override
     public void run(String... args) {
         String email = "admin@admin.cps.sp.gov.br";
         if (usuarioRepository.existsByEmail(email)) return;

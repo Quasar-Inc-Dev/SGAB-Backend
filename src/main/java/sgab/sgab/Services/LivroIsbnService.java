@@ -1,4 +1,4 @@
-package sgab.sgab.Services;
+package sgab.sgab.services;
 
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;

@@ -5,10 +5,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import sgab.sgab.Repositories.UsuarioRepository;
+import sgab.sgab.repositories.UsuarioRepository;
 import sgab.sgab.entities.Usuario;
 
-@Service 
+@Service
 public class UsuarioDetailsService implements UserDetailsService {
     private final UsuarioRepository usuarioRepository;
 
