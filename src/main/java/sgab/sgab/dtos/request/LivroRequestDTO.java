@@ -46,6 +46,10 @@ public record LivroRequestDTO(
         @NotNull
         Boolean livroStatus,
 
-        String imgUrl
+        String imgUrl,
+
+        @NotNull
+        @Positive
+        Integer qtdUnidade
 ) {
 }

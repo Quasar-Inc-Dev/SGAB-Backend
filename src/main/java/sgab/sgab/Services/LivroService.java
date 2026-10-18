@@ -82,6 +82,23 @@ public class LivroService {
     }
 
     @Transactional
+    public LivroResponseDTO desativar(Integer id) {
+        Livro livro = buscarEntidadePorId(id);
+
+        if (Boolean.FALSE.equals(livro.getLivroStatus())) {
+            throw new IllegalArgumentException(
+                    "O livro já está desativado"
+            );
+        }
+
+        livro.setLivroStatus(false);
+
+        Livro desativado = livroRepository.save(livro);
+
+        return converterParaResponse(desativado);
+    }
+
+    @Transactional
     public void excluir(Integer id) {
         Livro livro = buscarEntidadePorId(id);
         livroRepository.delete(livro);
@@ -115,6 +132,7 @@ public class LivroService {
         livro.setArea(dto.area());
         livro.setLivroStatus(dto.livroStatus());
         livro.setImgUrl(dto.imgUrl());
+        livro.setQtdUnidade(dto.qtdUnidade());
     }
 
     private LivroResponseDTO converterParaResponse(Livro livro) {
@@ -135,7 +153,8 @@ public class LivroService {
                 livro.getDewey(),
                 livro.getArea(),
                 livro.getLivroStatus(),
-                livro.getImgUrl()
+                livro.getImgUrl(),
+                livro.getQtdUnidade()
         );
     }
 

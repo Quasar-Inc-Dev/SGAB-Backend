@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import sgab.sgab.Repositories.UsuarioRepository;
 import sgab.sgab.dtos.response.CpfNaoEncontradoResponseDTO;
+import sgab.sgab.dtos.response.UsuarioResponseDTO;
 import sgab.sgab.entities.Usuario;
 import sgab.sgab.entities.Enum.TipoUsuario;
 import sgab.sgab.exceptions.CpfDuplicadoExeception;
@@ -46,7 +47,17 @@ public class UsuarioService {
             usuario.getId(), usuario.getCpf(), usuario.getNome(), 
             usuario.getEmail(), usuario.getTipoUsuario(), usuario.getStatusUsuario()
         );
-    } 
+    }
+
+    public UsuarioResponseDTO buscarUsuarioLogado(Integer id) {
+        Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new CpfNaoEncontrado("Usuário não encontrado"));
+
+        return new UsuarioResponseDTO(
+            usuario.getId(), usuario.getCpf(), usuario.getNome(),
+            usuario.getEmail(), usuario.getTipoUsuario(), usuario.getStatusUsuario()
+        );
+    }
 
     protected  void atualizarUsuarioBase(Usuario usuario, String nome) {
         usuario.setNome(nome);

@@ -16,10 +16,14 @@ import sgab.sgab.dtos.response.AdministradorResponseDTO;
 import sgab.sgab.dtos.response.CpfNaoEncontradoResponseDTO;
 import sgab.sgab.dtos.response.FuncionarioResponseDTO;
 import sgab.sgab.dtos.response.LeitorResponseDTO;
+import sgab.sgab.dtos.response.UsuarioResponseDTO;
+import sgab.sgab.security.UsuarioDetails;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -68,5 +72,12 @@ public class UsuarioController{
         CpfNaoEncontradoResponseDTO response = usuarioService.buscarPorCpf(request.cpf());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioResponseDTO> buscarUsuarioLogado(@AuthenticationPrincipal UsuarioDetails usuarioDetails) {
+        UsuarioResponseDTO response = usuarioService.buscarUsuarioLogado(usuarioDetails.getUsuario().getId());
+
+        return ResponseEntity.ok(response);
     }
 }

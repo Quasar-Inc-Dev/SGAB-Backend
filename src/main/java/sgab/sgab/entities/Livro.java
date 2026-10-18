@@ -62,4 +62,7 @@ public class Livro {
 
     @Column(name = "img_url", length = 200)
     private String imgUrl;
+
+    // @Column(name = "QtdUnidade") 
+    // private Integer qtdUnidade;
 }
