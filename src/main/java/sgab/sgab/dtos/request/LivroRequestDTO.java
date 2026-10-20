@@ -48,8 +48,8 @@ public record LivroRequestDTO(
 
         String imgUrl,
 
-        @NotNull
+        // Usado só no cadastro: cria essa quantidade de exemplares (padrão 1). Ignorado na edição.
         @Positive
-        Integer qtdUnidade
+        Integer quantidadeExemplares
 ) {
 }

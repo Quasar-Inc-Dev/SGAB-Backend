@@ -58,7 +58,6 @@ public class UsuarioService {
             usuario.getEmail(), usuario.getTipoUsuario(), usuario.getStatusUsuario()
         );
     }
-    }
 
     protected  void atualizarUsuarioBase(Usuario usuario, String nome) {
         usuario.setNome(nome);

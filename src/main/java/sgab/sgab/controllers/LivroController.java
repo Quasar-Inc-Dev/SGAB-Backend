@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,7 @@ import jakarta.validation.Valid;
 import sgab.sgab.services.LivroIsbnService;
 import sgab.sgab.services.LivroService;
 import sgab.sgab.dtos.request.LivroRequestDTO;
+import sgab.sgab.dtos.response.ExemplarResponseDTO;
 import sgab.sgab.dtos.response.LivroIsbnResponseDTO;
 import sgab.sgab.dtos.response.LivroResponseDTO;
 
@@ -96,5 +98,21 @@ public class LivroController {
     ) {
         livroService.excluir(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/exemplares")
+    public ResponseEntity<List<ExemplarResponseDTO>> listarExemplares(
+            @PathVariable Integer id
+    ) {
+        return ResponseEntity.ok(livroService.listarExemplares(id));
+    }
+
+    @PostMapping("/{id}/exemplares")
+    public ResponseEntity<List<ExemplarResponseDTO>> adicionarExemplares(
+            @PathVariable Integer id,
+            @RequestParam(defaultValue = "1") Integer quantidade
+    ) {
+        List<ExemplarResponseDTO> response = livroService.adicionarExemplares(id, quantidade);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

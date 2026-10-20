@@ -7,4 +7,6 @@ import sgab.sgab.entities.Emprestimo;
 @Repository
 public interface EmprestimoRepository extends JpaRepository<Emprestimo, Integer> {
     // O JpaRepository já nos fornece findAll, findById, save e delete
+
+    boolean existsByExemplarLivroLivroId(Integer livroId);
 }

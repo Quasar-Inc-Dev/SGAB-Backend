@@ -5,8 +5,12 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import sgab.sgab.repositories.EmprestimoRepository;
+import sgab.sgab.repositories.ExemplarRepository;
 import sgab.sgab.repositories.LivroRepository;
+import sgab.sgab.repositories.ReservaRepository;
 import sgab.sgab.dtos.request.LivroRequestDTO;
+import sgab.sgab.dtos.response.ExemplarResponseDTO;
 import sgab.sgab.dtos.response.LivroResponseDTO;
 import sgab.sgab.entities.Livro;
 import sgab.sgab.exceptions.LivroNaoEncontradoException;
@@ -15,9 +19,23 @@ import sgab.sgab.exceptions.LivroNaoEncontradoException;
 public class LivroService {
 
     private final LivroRepository livroRepository;
+    private final ExemplarRepository exemplarRepository;
+    private final EmprestimoRepository emprestimoRepository;
+    private final ReservaRepository reservaRepository;
+    private final ExemplarService exemplarService;
 
-    public LivroService(LivroRepository livroRepository) {
+    public LivroService(
+            LivroRepository livroRepository,
+            ExemplarRepository exemplarRepository,
+            EmprestimoRepository emprestimoRepository,
+            ReservaRepository reservaRepository,
+            ExemplarService exemplarService
+    ) {
         this.livroRepository = livroRepository;
+        this.exemplarRepository = exemplarRepository;
+        this.emprestimoRepository = emprestimoRepository;
+        this.reservaRepository = reservaRepository;
+        this.exemplarService = exemplarService;
     }
 
     @Transactional
@@ -34,6 +52,9 @@ public class LivroService {
         preencherLivro(livro, dto, isbn);
 
         Livro salvo = livroRepository.save(livro);
+
+        int quantidade = dto.quantidadeExemplares() == null ? 1 : dto.quantidadeExemplares();
+        exemplarService.adicionarExemplares(salvo, quantidade);
 
         return converterParaResponse(salvo);
     }
@@ -85,13 +106,13 @@ public class LivroService {
     public LivroResponseDTO desativar(Integer id) {
         Livro livro = buscarEntidadePorId(id);
 
-        if (Boolean.FALSE.equals(livro.getLivroStatus())) {
+        if ("INATIVO".equals(livro.getLivroStatus())) {
             throw new IllegalArgumentException(
                     "O livro já está desativado"
             );
         }
 
-        livro.setLivroStatus(false);
+        livro.setLivroStatus("INATIVO");
 
         Livro desativado = livroRepository.save(livro);
 
@@ -101,7 +122,27 @@ public class LivroService {
     @Transactional
     public void excluir(Integer id) {
         Livro livro = buscarEntidadePorId(id);
+
+        // Empréstimos e reservas fazem parte do histórico; nesse caso o livro deve ser desativado
+        if (emprestimoRepository.existsByExemplarLivroLivroId(id) || reservaRepository.existsByLivroLivroId(id)) {
+            throw new IllegalArgumentException(
+                    "O livro possui empréstimos ou reservas registrados e não pode ser excluído. Desative-o."
+            );
+        }
+
+        exemplarRepository.deleteAll(exemplarRepository.findByLivroLivroId(id));
         livroRepository.delete(livro);
+    }
+
+    @Transactional
+    public List<ExemplarResponseDTO> adicionarExemplares(Integer livroId, int quantidade) {
+        Livro livro = buscarEntidadePorId(livroId);
+        return exemplarService.adicionarExemplares(livro, quantidade);
+    }
+
+    public List<ExemplarResponseDTO> listarExemplares(Integer livroId) {
+        buscarEntidadePorId(livroId);
+        return exemplarService.listarPorLivro(livroId);
     }
 
     private Livro buscarEntidadePorId(Integer id) {
@@ -109,17 +150,6 @@ public class LivroService {
                 .orElseThrow(() -> new LivroNaoEncontradoException(
                         "Livro não encontrado"
                 ));
-    }
-
-    @Transactional
-    public LivroResponseDTO desativar(Integer id) {
-        Livro livro = buscarEntidadePorId(id);
-
-        livro.setLivroStatus("INATIVO");
-
-        Livro livroDesativado = livroRepository.save(livro);
-
-        return converterParaResponse(livroDesativado);
     }
 
     private void preencherLivro(
@@ -143,7 +173,6 @@ public class LivroService {
         livro.setArea(dto.area());
         livro.setLivroStatus(dto.livroStatus());
         livro.setImgUrl(dto.imgUrl());
-        livro.setQtdUnidade(dto.qtdUnidade());
     }
 
     private LivroResponseDTO converterParaResponse(Livro livro) {
@@ -165,7 +194,8 @@ public class LivroService {
                 livro.getArea(),
                 livro.getLivroStatus(),
                 livro.getImgUrl(),
-                livro.getQtdUnidade()
+                exemplarService.contarTotal(livro.getLivroId()),
+                exemplarService.contarDisponiveis(livro.getLivroId())
         );
     }
 

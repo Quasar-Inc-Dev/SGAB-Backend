@@ -20,8 +20,8 @@ public class Emprestimo {
     private Integer emprestimoId;
 
     @ManyToOne
-    @JoinColumn(name = "livro_id", nullable = false)
-    private Livro livro;
+    @JoinColumn(name = "exemplar_id", nullable = false)
+    private Exemplar exemplar;
 
     @ManyToOne
     @JoinColumn(name = "leitor_id", nullable = false)

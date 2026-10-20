@@ -17,6 +17,8 @@ public record LivroResponseDTO(
         String dewey,
         String area,
         String livroStatus,
-        String imgUrl
+        String imgUrl,
+        Long totalExemplares,
+        Long exemplaresDisponiveis
 ) {
 }

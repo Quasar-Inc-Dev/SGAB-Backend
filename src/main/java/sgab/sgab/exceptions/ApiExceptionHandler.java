@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +25,26 @@ public class ApiExceptionHandler {
         resposta.put("erro", exception.getMessage());
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(resposta);
+    }
+
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    public ResponseEntity<Map<String, String>> tratarRecursoNaoEncontrado(
+            RecursoNaoEncontradoException exception
+    ) {
+        Map<String, String> resposta = new HashMap<>();
+        resposta.put("erro", exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(resposta);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, String>> tratarConcorrencia(
+            ObjectOptimisticLockingFailureException exception
+    ) {
+        Map<String, String> resposta = new HashMap<>();
+        resposta.put("erro", "O exemplar foi alterado por outra operação. Tente novamente.");
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(resposta);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
