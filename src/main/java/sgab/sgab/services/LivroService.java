@@ -124,7 +124,7 @@ public class LivroService {
         Livro livro = buscarEntidadePorId(id);
 
         // Empréstimos e reservas fazem parte do histórico; nesse caso o livro deve ser desativado
-        if (emprestimoRepository.existsByExemplarLivroLivroId(id) || reservaRepository.existsByLivroLivroId(id)) {
+        if (emprestimoRepository.existsByExemplarLivroLivroId(id) || reservaRepository.existsByExemplarLivroLivroId(id)) {
             throw new IllegalArgumentException(
                     "O livro possui empréstimos ou reservas registrados e não pode ser excluído. Desative-o."
             );

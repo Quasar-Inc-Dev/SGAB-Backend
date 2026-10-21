@@ -11,16 +11,15 @@ import sgab.sgab.entities.Enum.StatusReserva;
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
 
-    boolean existsByLivroLivroId(Integer livroId);
+    boolean existsByExemplarLivroLivroId(Integer livroId);
 
-    boolean existsByLivroLivroIdAndStatus(Integer livroId, StatusReserva status);
+    boolean existsByExemplarExemplarIdAndStatus(Integer exemplarId, StatusReserva status);
 
-    boolean existsByLivroLivroIdAndLeitorIdAndStatusIn(Integer livroId, Integer leitorId, Collection<StatusReserva> status);
+    boolean existsByExemplarExemplarIdAndLeitorIdAndStatusIn(Integer exemplarId, Integer leitorId, Collection<StatusReserva> status);
 
-    long countByLivroLivroIdAndStatus(Integer livroId, StatusReserva status);
+    // Primeiro da fila do exemplar: a reserva ativa mais antiga
+    Optional<Reserva> findFirstByExemplarExemplarIdAndStatusOrderByDataReservaAsc(Integer exemplarId, StatusReserva status);
 
-    // Primeiro da fila: a reserva ativa mais antiga
-    Optional<Reserva> findFirstByLivroLivroIdAndStatusOrderByDataReservaAsc(Integer livroId, StatusReserva status);
-
-    Optional<Reserva> findFirstByLivroLivroIdAndLeitorIdAndStatus(Integer livroId, Integer leitorId, StatusReserva status);
+    // Exemplar do livro que está separado para o leitor
+    Optional<Reserva> findFirstByExemplarLivroLivroIdAndLeitorIdAndStatus(Integer livroId, Integer leitorId, StatusReserva status);
 }

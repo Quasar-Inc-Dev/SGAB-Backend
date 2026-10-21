@@ -3,11 +3,14 @@ package sgab.sgab.controllers;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import sgab.sgab.services.ReservaService;
 import sgab.sgab.dtos.response.ReservaResponseDTO;
 
 @RestController
-@RequestMapping("/reservas")
+@RequestMapping("api/reservas")
+@Tag(name = "Reserva", description = "Gerenciamento de reservas")
 public class ReservaController {
 
     private final ReservaService reservaService;
@@ -16,7 +19,7 @@ public class ReservaController {
         this.reservaService = reservaService;
     }
 
-    // POST /reservas
+    // Reserva de um exemplar específico: separa na hora se estiver disponível, senão entra na fila dele
     @PostMapping
     public ResponseEntity<ReservaResponseDTO> criarReserva(
             @RequestParam Integer exemplarId,
@@ -26,24 +29,21 @@ public class ReservaController {
         return ResponseEntity.status(201).body(novaReserva);
     }
 
-    // GET /reservas
     @GetMapping
     public ResponseEntity<List<ReservaResponseDTO>> listarTodas() {
         List<ReservaResponseDTO> reservas = reservaService.listarTodas();
         return ResponseEntity.ok(reservas);
     }
 
-    // GET /reservas/{id}
     @GetMapping("/{id}")
     public ResponseEntity<ReservaResponseDTO> buscarPorId(@PathVariable Integer id) {
         ReservaResponseDTO reserva = reservaService.buscarPorId(id);
         return ResponseEntity.ok(reserva);
     }
 
-    // DELETE /reservas/{id} ou PATCH para cancelar
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelarReserva(@PathVariable Integer id) {
-        reservaService.cancelarReserva(id);
-        return ResponseEntity.noContent().build();
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<ReservaResponseDTO> cancelarReserva(@PathVariable Integer id) {
+        ReservaResponseDTO reservaCancelada = reservaService.cancelarReserva(id);
+        return ResponseEntity.ok(reservaCancelada);
     }
 }

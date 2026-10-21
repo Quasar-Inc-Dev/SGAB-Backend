@@ -2,97 +2,163 @@ package sgab.sgab.services;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sgab.sgab.repositories.EmprestimoRepository;
 import sgab.sgab.repositories.ExemplarRepository;
+import sgab.sgab.repositories.LivroRepository;
 import sgab.sgab.repositories.LeitorRepository;
+import sgab.sgab.dtos.response.EmprestimoResponseDTO;
 import sgab.sgab.entities.Emprestimo;
 import sgab.sgab.entities.Exemplar;
+import sgab.sgab.entities.Livro;
 import sgab.sgab.entities.Leitor;
-import sgab.sgab.dtos.response.EmprestimoResponseDTO;
+import sgab.sgab.entities.Reserva;
+import sgab.sgab.entities.Enum.StatusExemplar;
+import sgab.sgab.exceptions.LivroNaoEncontradoException;
+import sgab.sgab.exceptions.RecursoNaoEncontradoException;
 
 @Service
 public class EmprestimoService {
 
+    private static final int DIAS_DE_EMPRESTIMO = 7;
+
     private final EmprestimoRepository emprestimoRepository;
-    private final ExemplarRepository exemplarRepository;
+    private final LivroRepository livroRepository;
     private final LeitorRepository leitorRepository;
+    private final ExemplarRepository exemplarRepository;
+    private final ReservaService reservaService;
 
     public EmprestimoService(
             EmprestimoRepository emprestimoRepository,
+            LivroRepository livroRepository,
+            LeitorRepository leitorRepository,
             ExemplarRepository exemplarRepository,
-            LeitorRepository leitorRepository
+            ReservaService reservaService
     ) {
         this.emprestimoRepository = emprestimoRepository;
-        this.exemplarRepository = exemplarRepository;
+        this.livroRepository = livroRepository;
         this.leitorRepository = leitorRepository;
+        this.exemplarRepository = exemplarRepository;
+        this.reservaService = reservaService;
     }
 
     public List<EmprestimoResponseDTO> listarTodos() {
-        return emprestimoRepository.findAll().stream()
-                .map(this::converterParaDTO)
-                .collect(Collectors.toList());
+        return emprestimoRepository.findAll()
+                .stream()
+                .map(this::converterParaResponse)
+                .toList();
     }
 
     public EmprestimoResponseDTO buscarPorId(Integer id) {
-        Emprestimo emprestimo = emprestimoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Empréstimo não encontrado."));
-        return converterParaDTO(emprestimo);
+        return converterParaResponse(buscarEntidadePorId(id));
     }
 
     @Transactional
-    public EmprestimoResponseDTO registrarEmprestimo(Integer exemplarId, Integer leitorId) {
-        Exemplar exemplar = exemplarRepository.findById(exemplarId)
-                .orElseThrow(() -> new RuntimeException("Exemplar não encontrado."));
+    public EmprestimoResponseDTO registrarEmprestimo(Integer livroId, Integer leitorId) {
+        Livro livro = livroRepository.findById(livroId)
+                .orElseThrow(() -> new LivroNaoEncontradoException("Livro não encontrado."));
 
         Leitor leitor = leitorRepository.findById(leitorId)
-                .orElseThrow(() -> new RuntimeException("Leitor não encontrado."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor não encontrado."));
+
+        if ("INATIVO".equals(livro.getLivroStatus())) {
+            throw new IllegalArgumentException("O livro está desativado e não pode ser emprestado.");
+        }
+
+        Exemplar exemplar = escolherExemplar(livroId, leitorId);
+        exemplar.setStatus(StatusExemplar.EMPRESTADO);
+        exemplarRepository.save(exemplar);
 
         Emprestimo emprestimo = new Emprestimo();
         emprestimo.setExemplar(exemplar);
         emprestimo.setLeitor(leitor);
 
         LocalDateTime dataEmprestimo = LocalDateTime.now();
-        LocalDateTime dataDevolucaoPrevista = dataEmprestimo.plusDays(7);
-
         emprestimo.setDataEmprestimo(dataEmprestimo);
-        emprestimo.setDataDevolucaoPrevista(dataDevolucaoPrevista);
+        emprestimo.setDataDevolucaoPrevista(dataEmprestimo.plusDays(DIAS_DE_EMPRESTIMO));
         emprestimo.setStatusDevolucao(false);
 
-        Emprestimo salvo = emprestimoRepository.save(emprestimo);
-        return converterParaDTO(salvo);
+        return converterParaResponse(emprestimoRepository.save(emprestimo));
     }
 
     @Transactional
     public EmprestimoResponseDTO renovar(Integer id) {
-        Emprestimo emprestimo = emprestimoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Empréstimo não encontrado."));
+        Emprestimo emprestimo = buscarEntidadePorId(id);
+
+        if (Boolean.TRUE.equals(emprestimo.getStatusDevolucao())) {
+            throw new IllegalArgumentException("Renovação negada: o empréstimo já foi devolvido.");
+        }
+
+        if (reservaService.exemplarPossuiFilaDeEspera(emprestimo.getExemplar().getExemplarId())) {
+            throw new IllegalArgumentException("Renovação não permitida: o exemplar possui reservas pendentes na fila de espera.");
+        }
 
         if (emprestimo.getDataDevolucaoPrevista().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Renovação negada: o empréstimo está com prazo vencido.");
         }
 
-        LocalDateTime novaDataDevolucao = emprestimo.getDataDevolucaoPrevista().plusDays(7);
-        emprestimo.setDataDevolucaoPrevista(novaDataDevolucao);
+        emprestimo.setDataDevolucaoPrevista(emprestimo.getDataDevolucaoPrevista().plusDays(DIAS_DE_EMPRESTIMO));
 
-        Emprestimo atualizado = emprestimoRepository.save(emprestimo);
-        return converterParaDTO(atualizado);
+        return converterParaResponse(emprestimoRepository.save(emprestimo));
     }
 
-private EmprestimoResponseDTO converterParaDTO(Emprestimo emprestimo) {
+    @Transactional
+    public EmprestimoResponseDTO devolver(Integer id) {
+        Emprestimo emprestimo = buscarEntidadePorId(id);
+
+        if (Boolean.TRUE.equals(emprestimo.getStatusDevolucao())) {
+            throw new IllegalArgumentException("Este empréstimo já foi devolvido.");
+        }
+
+        emprestimo.setDataDevolucao(LocalDateTime.now());
+        emprestimo.setStatusDevolucao(true);
+        emprestimoRepository.save(emprestimo);
+
+        // O exemplar vai para o primeiro da fila de reservas ou volta a ficar disponível
+        reservaService.destinarExemplarLiberado(emprestimo.getExemplar());
+
+        return converterParaResponse(emprestimo);
+    }
+
+    /**
+     * Se o leitor tem um exemplar separado por reserva, usa esse exemplar e conclui a reserva.
+     * Caso contrário, pega um exemplar disponível.
+     */
+    private Exemplar escolherExemplar(Integer livroId, Integer leitorId) {
+        Optional<Reserva> reservaDoLeitor = reservaService.buscarReservaAguardandoRetirada(livroId, leitorId);
+
+        if (reservaDoLeitor.isPresent()) {
+            Reserva reserva = reservaDoLeitor.get();
+            reservaService.marcarComoAtendida(reserva);
+            return reserva.getExemplar();
+        }
+
+        return exemplarRepository
+                .findFirstByLivroLivroIdAndStatusOrderByExemplarIdAsc(livroId, StatusExemplar.DISPONIVEL)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Não há exemplares disponíveis deste livro. O leitor pode fazer uma reserva."
+                ));
+    }
+
+    private Emprestimo buscarEntidadePorId(Integer id) {
+        return emprestimoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
+    }
+
+    private EmprestimoResponseDTO converterParaResponse(Emprestimo emprestimo) {
         Exemplar exemplar = emprestimo.getExemplar();
-        Leitor leitor = emprestimo.getLeitor();
 
         return new EmprestimoResponseDTO(
                 emprestimo.getEmprestimoId(),
-                exemplar != null ? exemplar.getExemplarId() : null,
-                null, // tombo
-                exemplar != null && exemplar.getLivro() != null ? exemplar.getLivro().getLivroId() : null,
-                exemplar != null && exemplar.getLivro() != null ? exemplar.getLivro().getTitulo() : null,
-                leitor != null ? leitor.getId() : null,
-                null,
+                exemplar.getExemplarId(),
+                exemplar.getTombo(),
+                exemplar.getLivro().getLivroId(),
+                exemplar.getLivro().getTitulo(),
+                emprestimo.getLeitor().getId(),
+                emprestimo.getLeitor().getUsuario().getNome(),
                 emprestimo.getDataEmprestimo(),
                 emprestimo.getDataDevolucaoPrevista(),
                 emprestimo.getDataDevolucao(),
