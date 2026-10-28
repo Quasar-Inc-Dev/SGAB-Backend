@@ -8,6 +8,7 @@ import sgab.sgab.entities.Enum.TipoUsuario;
 import sgab.sgab.entities.valueobjects.Senha;
 import sgab.sgab.entities.valueobjects.validation.cpf.ValidCpf;
 import sgab.sgab.entities.valueobjects.validation.email.ValidEmail;
+import sgab.sgab.security.CpfCryptoConverter;
 
 @Entity
 @Table(name = "usuario")
@@ -21,7 +22,8 @@ public class Usuario {
     private Integer id;
 
     @ValidCpf
-    @Column(length = 11, nullable = false)
+    @Convert(converter = CpfCryptoConverter.class)
+    @Column(nullable = false)
     private String cpf;
 
     @Column(nullable = false)
