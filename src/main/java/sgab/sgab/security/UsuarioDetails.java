@@ -16,30 +16,30 @@ public class UsuarioDetails implements UserDetails {
         this.usuario = usuario;
     }
 
-    @Override 
+    @Override
     public String getUsername(){
         return usuario.getEmail();
     }
 
-    @Override 
+    @Override
     public String getPassword() {
-        return usuario.getSenha();
+        return usuario.getSenha().getValor();
     }
 
-    @Override 
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities(){
         return List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getTipoUsuario().name()));
     }
 
-    @Override 
+    @Override
     public boolean isEnabled(){
         return usuario.getStatusUsuario();
     }
 
-    @Override 
+    @Override
     public boolean isAccountNonExpired() {return true;}
 
-    @Override 
+    @Override
     public boolean isAccountNonLocked() {return true;}
 
     @Override

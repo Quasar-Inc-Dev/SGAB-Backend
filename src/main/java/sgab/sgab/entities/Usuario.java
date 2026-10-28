@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import sgab.sgab.entities.Enum.TipoUsuario;
+import sgab.sgab.entities.valueobjects.Senha;
 import sgab.sgab.entities.valueobjects.validation.cpf.ValidCpf;
 import sgab.sgab.entities.valueobjects.validation.email.ValidEmail;
 
@@ -30,8 +31,11 @@ public class Usuario {
     @Column(nullable = false)
     private String email;
 
-    @Column(nullable = false)
-    private String senha;
+    @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "valor", column = @Column(name = "senha", nullable = false))
+    })
+    private Senha senha;
 
     @Column(name = "status_usuario", nullable = false)
     private Boolean statusUsuario = true;
