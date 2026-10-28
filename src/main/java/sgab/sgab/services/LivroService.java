@@ -9,6 +9,7 @@ import sgab.sgab.repositories.EmprestimoRepository;
 import sgab.sgab.repositories.ExemplarRepository;
 import sgab.sgab.repositories.LivroRepository;
 import sgab.sgab.repositories.ReservaRepository;
+import sgab.sgab.repositories.SolicitacaoRepository;
 import sgab.sgab.dtos.request.LivroRequestDTO;
 import sgab.sgab.dtos.response.ExemplarResponseDTO;
 import sgab.sgab.dtos.response.LivroResponseDTO;
@@ -22,6 +23,7 @@ public class LivroService {
     private final ExemplarRepository exemplarRepository;
     private final EmprestimoRepository emprestimoRepository;
     private final ReservaRepository reservaRepository;
+    private final SolicitacaoRepository solicitacaoRepository;
     private final ExemplarService exemplarService;
 
     public LivroService(
@@ -29,12 +31,14 @@ public class LivroService {
             ExemplarRepository exemplarRepository,
             EmprestimoRepository emprestimoRepository,
             ReservaRepository reservaRepository,
+            SolicitacaoRepository solicitacaoRepository,
             ExemplarService exemplarService
     ) {
         this.livroRepository = livroRepository;
         this.exemplarRepository = exemplarRepository;
         this.emprestimoRepository = emprestimoRepository;
         this.reservaRepository = reservaRepository;
+        this.solicitacaoRepository = solicitacaoRepository;
         this.exemplarService = exemplarService;
     }
 
@@ -124,7 +128,8 @@ public class LivroService {
         Livro livro = buscarEntidadePorId(id);
 
         // Empréstimos e reservas fazem parte do histórico; nesse caso o livro deve ser desativado
-        if (emprestimoRepository.existsByExemplarLivroLivroId(id) || reservaRepository.existsByExemplarLivroLivroId(id)) {
+        if (emprestimoRepository.existsByExemplarLivroLivroId(id) || reservaRepository.existsByExemplarLivroLivroId(id)
+                || solicitacaoRepository.existsByLivroLivroId(id)) {
             throw new IllegalArgumentException(
                     "O livro possui empréstimos ou reservas registrados e não pode ser excluído. Desative-o."
             );

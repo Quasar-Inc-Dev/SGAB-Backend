@@ -59,6 +59,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/leitor/desativar/{id}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Solicitações: o leitor pede, o funcionário/administrador analisa
+                        .requestMatchers(HttpMethod.POST, "/api/solicitacoes/emprestimo", "/api/solicitacoes/reserva").hasRole("LEITOR")
+                        .requestMatchers(HttpMethod.GET, "/api/solicitacoes/minhas").hasRole("LEITOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/solicitacoes/*/cancelar").hasRole("LEITOR")
+                        .requestMatchers("/api/solicitacoes/**").hasAnyRole("FUNCIONARIO", "ADMINISTRADOR")
+                        // Empréstimo/reserva direto (sem aprovação), devolução, renovação e cancelamento: só funcionário/administrador
+                        .requestMatchers(HttpMethod.POST, "/api/emprestimos/**", "/api/reservas/**").hasAnyRole("FUNCIONARIO", "ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/emprestimos/**", "/api/reservas/**").hasAnyRole("FUNCIONARIO", "ADMINISTRADOR")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )

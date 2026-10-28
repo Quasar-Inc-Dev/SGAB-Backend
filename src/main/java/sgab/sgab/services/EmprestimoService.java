@@ -69,6 +69,24 @@ public class EmprestimoService {
         }
 
         Exemplar exemplar = escolherExemplar(livroId, leitorId);
+
+        return converterParaResponse(criarEmprestimo(exemplar, leitor));
+    }
+
+    /**
+     * Cria o empréstimo de um exemplar que já foi separado para o leitor (retirada no balcão).
+     * O prazo de devolução começa a contar a partir deste momento.
+     */
+    @Transactional
+    public Emprestimo registrarRetirada(Exemplar exemplar, Leitor leitor) {
+        if (exemplar.getStatus() != StatusExemplar.RESERVADO) {
+            throw new IllegalArgumentException("O exemplar separado não está mais reservado para retirada.");
+        }
+
+        return criarEmprestimo(exemplar, leitor);
+    }
+
+    private Emprestimo criarEmprestimo(Exemplar exemplar, Leitor leitor) {
         exemplar.setStatus(StatusExemplar.EMPRESTADO);
         exemplarRepository.save(exemplar);
 
@@ -81,7 +99,7 @@ public class EmprestimoService {
         emprestimo.setDataDevolucaoPrevista(dataEmprestimo.plusDays(DIAS_DE_EMPRESTIMO));
         emprestimo.setStatusDevolucao(false);
 
-        return converterParaResponse(emprestimoRepository.save(emprestimo));
+        return emprestimoRepository.save(emprestimo);
     }
 
     @Transactional
