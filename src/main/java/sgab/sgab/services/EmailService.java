@@ -1,5 +1,6 @@
 package sgab.sgab.services;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -11,16 +12,20 @@ import java.time.format.DateTimeFormatter;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final String remetente;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    public EmailService(JavaMailSender mailSender) {
+    // O remetente precisa ser a mesma conta autenticada no SMTP, senão o servidor recusa o envio
+    public EmailService(JavaMailSender mailSender,
+            @Value("${sgab.email.remetente:${spring.mail.username}}") String remetente) {
         this.mailSender = mailSender;
+        this.remetente = remetente;
     }
 
 
     private void enviarMensagem(String destinatario, String assunto, String texto) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("mheber36@gmail.com");
+        message.setFrom(remetente);
         message.setTo(destinatario);
         message.setSubject(assunto);
         message.setText(texto);

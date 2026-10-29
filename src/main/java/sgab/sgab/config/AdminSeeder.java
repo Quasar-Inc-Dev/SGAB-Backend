@@ -22,6 +22,6 @@ public class AdminSeeder implements CommandLineRunner {
         String email = "admin@admin.cps.sp.gov.br";
         if (usuarioRepository.existsByEmail(email)) return;
 
-        administradorService.cadastrar(new AdministradorRequestDTO("52998224725", "Admin", email, "FsHm2026"));
+        administradorService.cadastrar(new AdministradorRequestDTO("52998224725", "Admin", email, "FsHm2026"), false);
     }
 }

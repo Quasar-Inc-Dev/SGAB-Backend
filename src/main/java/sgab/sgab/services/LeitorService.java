@@ -2,9 +2,11 @@ package sgab.sgab.services;
 
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
+import sgab.sgab.events.UsuarioCadastradoEvent;
 import sgab.sgab.repositories.LeitorRepository;
 import sgab.sgab.dtos.request.LeitorRequestDTO;
 import sgab.sgab.dtos.request.LeitorUpdateRequestDTO;
@@ -18,10 +20,13 @@ import sgab.sgab.exceptions.CpfNaoEncontrado;
 public class LeitorService {
     private final UsuarioService usuarioService;
     private final LeitorRepository leitorRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public LeitorService(UsuarioService usuarioService, LeitorRepository leitorRepository){
+    public LeitorService(UsuarioService usuarioService, LeitorRepository leitorRepository,
+            ApplicationEventPublisher eventPublisher){
         this.usuarioService = usuarioService;
         this.leitorRepository = leitorRepository;
+        this.eventPublisher = eventPublisher;
     }
 
         @Transactional
@@ -39,6 +44,9 @@ public class LeitorService {
         leitor.setStatusLeitor(true);
 
         Leitor salvo = leitorRepository.save(leitor);
+
+        // O e-mail só sai depois do commit (ver NotificacaoEmailListener)
+        eventPublisher.publishEvent(new UsuarioCadastradoEvent(usuario.getEmail(), usuario.getNome()));
 
         return new LeitorResponseDTO(
                 usuario.getId(), usuario.getCpf(), usuario.getNome(), usuario.getEmail(),

@@ -1,8 +1,10 @@
 package sgab.sgab.services;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
+import sgab.sgab.events.UsuarioCadastradoEvent;
 import sgab.sgab.repositories.FuncionarioRepository;
 import sgab.sgab.dtos.request.FuncionarioRequestDTO;
 import sgab.sgab.dtos.response.FuncionarioResponseDTO;
@@ -14,10 +16,13 @@ import sgab.sgab.entities.Enum.TipoUsuario;
 public class FuncionarioService {
     private final UsuarioService usuarioService;
     private final FuncionarioRepository funcionarioRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public FuncionarioService(UsuarioService usuarioService, FuncionarioRepository funcionarioRepository) {
+    public FuncionarioService(UsuarioService usuarioService, FuncionarioRepository funcionarioRepository,
+            ApplicationEventPublisher eventPublisher) {
         this.usuarioService = usuarioService;
         this.funcionarioRepository = funcionarioRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -32,6 +37,8 @@ public class FuncionarioService {
         funcionario.setStatusFuncionario(true);
 
         Funcionario salvo = funcionarioRepository.save(funcionario);
+
+        eventPublisher.publishEvent(new UsuarioCadastradoEvent(usuario.getEmail(), usuario.getNome()));
 
         return new FuncionarioResponseDTO(
             usuario.getId(), usuario.getCpf(), usuario.getNome(), usuario.getEmail(),
