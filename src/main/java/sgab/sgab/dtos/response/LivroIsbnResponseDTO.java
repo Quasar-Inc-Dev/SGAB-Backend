@@ -5,11 +5,11 @@ public record LivroIsbnResponseDTO(
         String titulo,
         String subtitulo,
         String descricao,
-        String autor,
+        String autores,
         String editora,
         String idioma,
-        Integer paginas,
-        Integer ano,
-        String genero
-) {
-}
+        Integer numeroPaginas,
+        Integer anoPublicacao,
+        String categorias,
+        String urlCapa
+) {}

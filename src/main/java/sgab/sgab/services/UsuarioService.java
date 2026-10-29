@@ -32,7 +32,7 @@ public class UsuarioService {
         usuario.setCpf(cpf);
         usuario.setNome(nome);
         usuario.setEmail(email);
-        usuario.setSenha(passwordEncoder.encode(senha));
+        usuario.setSenha(new sgab.sgab.entities.valueobjects.Senha(passwordEncoder.encode(senha)));
         usuario.setTipoUsuario(tipo);
         usuario.setStatusUsuario(true);
 
@@ -44,7 +44,7 @@ public class UsuarioService {
             .orElseThrow(() -> new CpfNaoEncontrado("CPF de usuário não encontrado na base de dados!"));
 
         return new CpfNaoEncontradoResponseDTO(
-            usuario.getId(), usuario.getCpf(), usuario.getNome(), 
+            usuario.getId(), usuario.getCpf(), usuario.getNome(),
             usuario.getEmail(), usuario.getTipoUsuario(), usuario.getStatusUsuario()
         );
     }
