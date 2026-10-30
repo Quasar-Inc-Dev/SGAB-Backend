@@ -13,13 +13,16 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final String remetente;
+    private final String urlFrontend;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // O remetente precisa ser a mesma conta autenticada no SMTP, senão o servidor recusa o envio
     public EmailService(JavaMailSender mailSender,
-            @Value("${sgab.email.remetente:${spring.mail.username}}") String remetente) {
+            @Value("${sgab.email.remetente:${spring.mail.username}}") String remetente,
+            @Value("${sgab.frontend.url:http://localhost:4200}") String urlFrontend) {
         this.mailSender = mailSender;
         this.remetente = remetente;
+        this.urlFrontend = urlFrontend;
     }
 
 
@@ -42,9 +45,10 @@ public class EmailService {
 
     public void enviarEmailRedefinicaoSenha(String destinatario, String token) {
         String assunto = "Redefinição de Senha - SGAB";
-        String linkFrontend = "http://localhost:4200/redefinir-senha?token=" + token;
+        String linkFrontend = urlFrontend + "/redefinir-senha?token=" + token;
         String texto = "Olá,\n\nRecebemos uma solicitação para alterar a sua senha no SGAB.\n\n" +
                 "Clique no link abaixo para criar uma nova senha:\n" + linkFrontend + "\n\n" +
+                "O link vale por tempo limitado e só pode ser usado uma vez.\n" +
                 "Se você não solicitou isso, ignore este e-mail.";
         enviarMensagem(destinatario, assunto, texto);
     }

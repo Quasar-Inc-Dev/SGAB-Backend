@@ -3,6 +3,7 @@ package sgab.sgab.controllers;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -98,6 +100,20 @@ public class LivroController {
     ) {
         livroService.excluir(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // multipart/form-data com o campo "imagem" (JPG, PNG ou WEBP)
+    @PostMapping(value = "/{id}/capa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<LivroResponseDTO> enviarCapa(
+            @PathVariable Integer id,
+            @RequestParam("imagem") MultipartFile imagem
+    ) {
+        return ResponseEntity.ok(livroService.atualizarCapa(id, imagem));
+    }
+
+    @DeleteMapping("/{id}/capa")
+    public ResponseEntity<LivroResponseDTO> removerCapa(@PathVariable Integer id) {
+        return ResponseEntity.ok(livroService.removerCapa(id));
     }
 
     @GetMapping("/{id}/exemplares")

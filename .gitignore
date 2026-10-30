@@ -34,3 +34,6 @@ build/
 
 ### Google API ###
 secrets.properties
+
+### Imagens enviadas pelos usuários (capas) ###
+upload/

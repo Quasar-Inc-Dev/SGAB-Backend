@@ -38,4 +38,15 @@ public class NotificacaoEmailListener {
             log.warn("Falha ao enviar e-mail de criação de conta para {}: {}", evento.email(), e.getMessage());
         }
     }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoSolicitarRedefinicaoSenha(RedefinicaoSenhaSolicitadaEvent evento) {
+        try {
+            emailService.enviarEmailRedefinicaoSenha(evento.email(), evento.token());
+            log.info("E-mail de redefinição de senha enviado para {}", evento.email());
+        } catch (MailException e) {
+            log.warn("Falha ao enviar e-mail de redefinição de senha para {}: {}", evento.email(), e.getMessage());
+        }
+    }
 }

@@ -48,6 +48,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(h2Console).permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
+                        // Imagens públicas: a tag <img> do front não envia o token JWT
+                        .requestMatchers(HttpMethod.GET, "/upload/**").permitAll()
+                        // Capa do livro: só funcionário/administrador (precisa vir antes das regras gerais de /api/livros/**)
+                        .requestMatchers(HttpMethod.POST, "/api/livros/*/capa").hasAnyRole("FUNCIONARIO", "ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/livros/*/capa").hasAnyRole("FUNCIONARIO", "ADMINISTRADOR")
                         .requestMatchers(HttpMethod.GET, "/api/livros/isbn/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/livros/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/livros").authenticated()
@@ -58,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/usuarios/buscarPorCpf").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/leitor/desativar/{id}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/esqueci-senha", "/redefinir-senha").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Solicitações: o leitor pede, o funcionário/administrador analisa
                         .requestMatchers(HttpMethod.POST, "/api/solicitacoes/emprestimo", "/api/solicitacoes/reserva").hasRole("LEITOR")

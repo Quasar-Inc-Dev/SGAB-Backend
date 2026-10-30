@@ -10,6 +10,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 
 import sgab.sgab.dtos.response.ErroResponseDTO;
@@ -80,6 +81,14 @@ public class ApiExceptionHandler {
     @ExceptionHandler({CpfDuplicadoExeception.class, EmailDuplicadoException.class})
     public ResponseEntity<ErroResponseDTO> handlConflito(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErroResponseDTO(e.getMessage()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> tratarArquivoGrande(MaxUploadSizeExceededException exception) {
+        Map<String, String> resposta = new HashMap<>();
+        resposta.put("erro", "A imagem é maior que o tamanho máximo permitido (5 MB)");
+
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(resposta);
     }
 
     @ExceptionHandler(BadCredentialsException.class)

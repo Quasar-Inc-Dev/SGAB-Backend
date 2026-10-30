@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import sgab.sgab.repositories.EmprestimoRepository;
 import sgab.sgab.repositories.ExemplarRepository;
@@ -25,6 +26,7 @@ public class LivroService {
     private final ReservaRepository reservaRepository;
     private final SolicitacaoRepository solicitacaoRepository;
     private final ExemplarService exemplarService;
+    private final ArmazenamentoImagemService armazenamentoImagemService;
 
     public LivroService(
             LivroRepository livroRepository,
@@ -32,7 +34,8 @@ public class LivroService {
             EmprestimoRepository emprestimoRepository,
             ReservaRepository reservaRepository,
             SolicitacaoRepository solicitacaoRepository,
-            ExemplarService exemplarService
+            ExemplarService exemplarService,
+            ArmazenamentoImagemService armazenamentoImagemService
     ) {
         this.livroRepository = livroRepository;
         this.exemplarRepository = exemplarRepository;
@@ -40,6 +43,7 @@ public class LivroService {
         this.reservaRepository = reservaRepository;
         this.solicitacaoRepository = solicitacaoRepository;
         this.exemplarService = exemplarService;
+        this.armazenamentoImagemService = armazenamentoImagemService;
     }
 
     @Transactional
@@ -137,6 +141,28 @@ public class LivroService {
 
         exemplarRepository.deleteAll(exemplarRepository.findByLivroLivroId(id));
         livroRepository.delete(livro);
+        armazenamentoImagemService.removerSeLocal(livro.getImgUrl());
+    }
+
+    @Transactional
+    public LivroResponseDTO atualizarCapa(Integer id, MultipartFile imagem) {
+        Livro livro = buscarEntidadePorId(id);
+
+        String capaAnterior = livro.getImgUrl();
+        livro.setImgUrl(armazenamentoImagemService.salvarCapa(id, imagem));
+        armazenamentoImagemService.removerSeLocal(capaAnterior);
+
+        return converterParaResponse(livroRepository.save(livro));
+    }
+
+    @Transactional
+    public LivroResponseDTO removerCapa(Integer id) {
+        Livro livro = buscarEntidadePorId(id);
+
+        armazenamentoImagemService.removerSeLocal(livro.getImgUrl());
+        livro.setImgUrl(null);
+
+        return converterParaResponse(livroRepository.save(livro));
     }
 
     @Transactional
@@ -177,7 +203,11 @@ public class LivroService {
         livro.setDewey(dto.dewey());
         livro.setArea(dto.area());
         livro.setLivroStatus(dto.livroStatus());
-        livro.setImgUrl(dto.imgUrl());
+
+        // Sem imgUrl no corpo, mantém a capa atual (a capa enviada por upload não some ao editar o livro)
+        if (dto.imgUrl() != null && !dto.imgUrl().isBlank()) {
+            livro.setImgUrl(dto.imgUrl());
+        }
     }
 
     private LivroResponseDTO converterParaResponse(Livro livro) {
