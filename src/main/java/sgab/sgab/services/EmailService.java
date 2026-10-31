@@ -53,12 +53,14 @@ public class EmailService {
         enviarMensagem(destinatario, assunto, texto);
     }
 
-    public void enviarEmailEmprestimoAprovado(String destinatario, String nomeLeitor, String tituloLivro, LocalDateTime dataDevolucao) {
-        String assunto = "Empréstimo Aprovado - SGAB";
+    public void enviarEmailEmprestimoAprovado(String destinatario, String nomeLeitor, String tituloLivro, LocalDateTime dataLimiteRetirada) {
+        String assunto = "Empréstimo Aprovado - Retire seu Livro - SGAB";
         String texto = "Olá, " + nomeLeitor + ",\n\n" +
-                "Seu empréstimo do livro \"" + tituloLivro + "\" foi aprovado com sucesso!\n" +
-                "Data limite para devolução: " + dataDevolucao.format(formatter) + "\n\n" +
-                "Bom proveito da leitura!";
+                "Sua solicitação de empréstimo do livro \"" + tituloLivro + "\" foi aprovada!\n" +
+                "Um exemplar já está separado para você no balcão da biblioteca.\n\n" +
+                "Retire o livro até: " + dataLimiteRetirada.format(formatter) + "\n" +
+                "O prazo de devolução começa a contar a partir da retirada.\n\n" +
+                "Caso não retire até esta data, a solicitação será cancelada automaticamente.";
         enviarMensagem(destinatario, assunto, texto);
     }
 
@@ -66,7 +68,24 @@ public class EmailService {
         String assunto = "Solicitação de Empréstimo Recusada - SGAB";
         String texto = "Olá, " + nomeLeitor + ",\n\n" +
                 "Infelizmente, sua solicitação de empréstimo para o livro \"" + tituloLivro + "\" não pôde ser atendida.\n" +
-                "Motivo: " + motivo;
+                "Motivo: " + motivoOuPadrao(motivo);
+        enviarMensagem(destinatario, assunto, texto);
+    }
+
+    public void enviarEmailEmprestimoRegistrado(String destinatario, String nomeLeitor, String tituloLivro, LocalDateTime dataDevolucao) {
+        String assunto = "Empréstimo Registrado - SGAB";
+        String texto = "Olá, " + nomeLeitor + ",\n\n" +
+                "A retirada do livro \"" + tituloLivro + "\" foi registrada com sucesso!\n" +
+                "Data limite para devolução: " + dataDevolucao.format(formatter) + "\n\n" +
+                "Bom proveito da leitura!";
+        enviarMensagem(destinatario, assunto, texto);
+    }
+
+    public void enviarEmailRetiradaExpirada(String destinatario, String nomeLeitor, String tituloLivro) {
+        String assunto = "Prazo de Retirada Expirado - SGAB";
+        String texto = "Olá, " + nomeLeitor + ",\n\n" +
+                "O prazo para retirar o livro \"" + tituloLivro + "\" terminou e o exemplar separado foi liberado.\n" +
+                "Se ainda tiver interesse, faça uma nova solicitação pelo sistema.";
         enviarMensagem(destinatario, assunto, texto);
     }
 
@@ -79,11 +98,20 @@ public class EmailService {
         enviarMensagem(destinatario, assunto, texto);
     }
 
+    public void enviarEmailReservaNaFila(String destinatario, String nomeLeitor, String tituloLivro) {
+        String assunto = "Reserva Confirmada - SGAB";
+        String texto = "Olá, " + nomeLeitor + ",\n\n" +
+                "Sua reserva do livro \"" + tituloLivro + "\" foi registrada.\n" +
+                "O exemplar está em uso no momento e você entrou na fila de espera.\n" +
+                "Avisaremos por e-mail quando ele estiver separado para você.";
+        enviarMensagem(destinatario, assunto, texto);
+    }
+
     public void enviarEmailReservaRecusada(String destinatario, String nomeLeitor, String tituloLivro, String motivo) {
         String assunto = "Solicitação de Reserva Recusada - SGAB";
         String texto = "Olá, " + nomeLeitor + ",\n\n" +
                 "Sua solicitação de reserva para o livro \"" + tituloLivro + "\" foi recusada.\n" +
-                "Motivo: " + motivo;
+                "Motivo: " + motivoOuPadrao(motivo);
         enviarMensagem(destinatario, assunto, texto);
     }
 
@@ -94,5 +122,9 @@ public class EmailService {
                 "Data limite: " + dataDevolucao.format(formatter) + "\n\n" +
                 "Lembre-se de realizar a renovação pelo sistema caso precise de mais tempo.";
         enviarMensagem(destinatario, assunto, texto);
+    }
+
+    private String motivoOuPadrao(String motivo) {
+        return motivo == null || motivo.isBlank() ? "não informado" : motivo;
     }
 }

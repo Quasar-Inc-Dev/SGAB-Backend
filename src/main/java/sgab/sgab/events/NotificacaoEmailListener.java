@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import sgab.sgab.entities.Enum.TipoSolicitacao;
 import sgab.sgab.services.EmailService;
 
 /**
@@ -31,22 +32,83 @@ public class NotificacaoEmailListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void aoCadastrarUsuario(UsuarioCadastradoEvent evento) {
-        try {
-            emailService.enviarEmailCriacaoConta(evento.email(), evento.nome());
-            log.info("E-mail de criação de conta enviado para {}", evento.email());
-        } catch (MailException e) {
-            log.warn("Falha ao enviar e-mail de criação de conta para {}: {}", evento.email(), e.getMessage());
-        }
+        enviar("criação de conta", evento.email(),
+                () -> emailService.enviarEmailCriacaoConta(evento.email(), evento.nome()));
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void aoSolicitarRedefinicaoSenha(RedefinicaoSenhaSolicitadaEvent evento) {
+        enviar("redefinição de senha", evento.email(),
+                () -> emailService.enviarEmailRedefinicaoSenha(evento.email(), evento.token()));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoAprovarEmprestimo(EmprestimoAprovadoEvent evento) {
+        enviar("empréstimo aprovado", evento.email(),
+                () -> emailService.enviarEmailEmprestimoAprovado(
+                        evento.email(), evento.nome(), evento.tituloLivro(), evento.dataLimiteRetirada()));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoRecusarSolicitacao(SolicitacaoRecusadaEvent evento) {
+        if (evento.tipo() == TipoSolicitacao.EMPRESTIMO) {
+            enviar("empréstimo recusado", evento.email(),
+                    () -> emailService.enviarEmailEmprestimoRecusado(
+                            evento.email(), evento.nome(), evento.tituloLivro(), evento.motivo()));
+        } else {
+            enviar("reserva recusada", evento.email(),
+                    () -> emailService.enviarEmailReservaRecusada(
+                            evento.email(), evento.nome(), evento.tituloLivro(), evento.motivo()));
+        }
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoRegistrarEmprestimo(EmprestimoRegistradoEvent evento) {
+        enviar("empréstimo registrado", evento.email(),
+                () -> emailService.enviarEmailEmprestimoRegistrado(
+                        evento.email(), evento.nome(), evento.tituloLivro(), evento.dataDevolucaoPrevista()));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoExpirarRetirada(RetiradaExpiradaEvent evento) {
+        enviar("retirada expirada", evento.email(),
+                () -> emailService.enviarEmailRetiradaExpirada(evento.email(), evento.nome(), evento.tituloLivro()));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoSepararReserva(ReservaDisponivelEvent evento) {
+        enviar("reserva disponível", evento.email(),
+                () -> emailService.enviarEmailReservaAprovada(
+                        evento.email(), evento.nome(), evento.tituloLivro(), evento.dataLimiteRetirada()));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoEntrarNaFila(ReservaNaFilaEvent evento) {
+        enviar("reserva na fila", evento.email(),
+                () -> emailService.enviarEmailReservaNaFila(evento.email(), evento.nome(), evento.tituloLivro()));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoAproximarPrazoDevolucao(PrazoDevolucaoProximoEvent evento) {
+        enviar("lembrete de devolução", evento.email(),
+                () -> emailService.enviarEmailAlertaPrazoEntrega(
+                        evento.email(), evento.nome(), evento.tituloLivro(), evento.dataDevolucaoPrevista()));
+    }
+
+    private void enviar(String descricao, String email, Runnable envio) {
         try {
-            emailService.enviarEmailRedefinicaoSenha(evento.email(), evento.token());
-            log.info("E-mail de redefinição de senha enviado para {}", evento.email());
+            envio.run();
+            log.info("E-mail de {} enviado para {}", descricao, email);
         } catch (MailException e) {
-            log.warn("Falha ao enviar e-mail de redefinição de senha para {}: {}", evento.email(), e.getMessage());
+            log.warn("Falha ao enviar e-mail de {} para {}: {}", descricao, email, e.getMessage());
         }
     }
 }

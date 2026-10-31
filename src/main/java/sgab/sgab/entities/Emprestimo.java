@@ -38,4 +38,8 @@ public class Emprestimo {
 
     @Column(name = "status_devolucao", nullable = false)
     private Boolean statusDevolucao = false;
+
+    // Evita reenviar o lembrete de devolução; volta a false quando o empréstimo é renovado
+    @Column(name = "lembrete_prazo_enviado")
+    private Boolean lembretePrazoEnviado = false;
 }

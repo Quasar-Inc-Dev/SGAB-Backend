@@ -4,8 +4,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sgab.sgab.events.EmprestimoRegistradoEvent;
+import sgab.sgab.events.PrazoDevolucaoProximoEvent;
 import sgab.sgab.repositories.EmprestimoRepository;
 import sgab.sgab.repositories.ExemplarRepository;
 import sgab.sgab.repositories.LivroRepository;
@@ -30,19 +34,27 @@ public class EmprestimoService {
     private final LeitorRepository leitorRepository;
     private final ExemplarRepository exemplarRepository;
     private final ReservaService reservaService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    // Com quantos dias de antecedência o leitor recebe o lembrete de devolução
+    private final int diasAntecedenciaLembrete;
 
     public EmprestimoService(
             EmprestimoRepository emprestimoRepository,
             LivroRepository livroRepository,
             LeitorRepository leitorRepository,
             ExemplarRepository exemplarRepository,
-            ReservaService reservaService
+            ReservaService reservaService,
+            ApplicationEventPublisher eventPublisher,
+            @Value("${sgab.emprestimo.dias-antecedencia-lembrete:2}") int diasAntecedenciaLembrete
     ) {
         this.emprestimoRepository = emprestimoRepository;
         this.livroRepository = livroRepository;
         this.leitorRepository = leitorRepository;
         this.exemplarRepository = exemplarRepository;
         this.reservaService = reservaService;
+        this.eventPublisher = eventPublisher;
+        this.diasAntecedenciaLembrete = diasAntecedenciaLembrete;
     }
 
     public List<EmprestimoResponseDTO> listarTodos() {
@@ -99,7 +111,14 @@ public class EmprestimoService {
         emprestimo.setDataDevolucaoPrevista(dataEmprestimo.plusDays(DIAS_DE_EMPRESTIMO));
         emprestimo.setStatusDevolucao(false);
 
-        return emprestimoRepository.save(emprestimo);
+        Emprestimo salvo = emprestimoRepository.save(emprestimo);
+
+        eventPublisher.publishEvent(new EmprestimoRegistradoEvent(
+                leitor.getUsuario().getEmail(), leitor.getUsuario().getNome(),
+                exemplar.getLivro().getTitulo(), salvo.getDataDevolucaoPrevista()
+        ));
+
+        return salvo;
     }
 
     @Transactional
@@ -119,6 +138,8 @@ public class EmprestimoService {
         }
 
         emprestimo.setDataDevolucaoPrevista(emprestimo.getDataDevolucaoPrevista().plusDays(DIAS_DE_EMPRESTIMO));
+        // Nova data de devolução: o leitor deve receber um novo lembrete
+        emprestimo.setLembretePrazoEnviado(false);
 
         return converterParaResponse(emprestimoRepository.save(emprestimo));
     }
@@ -139,6 +160,31 @@ public class EmprestimoService {
         reservaService.destinarExemplarLiberado(emprestimo.getExemplar());
 
         return converterParaResponse(emprestimo);
+    }
+
+    /**
+     * Envia o lembrete dos empréstimos em aberto que vencem nos próximos dias.
+     * Chamado periodicamente pelo agendador; cada empréstimo recebe um lembrete por data de devolução.
+     */
+    @Transactional
+    public int enviarLembretesPrazoDevolucao() {
+        LocalDateTime agora = LocalDateTime.now();
+        List<Emprestimo> proximosDoVencimento = emprestimoRepository.buscarSemLembreteComVencimentoEntre(
+                agora, agora.plusDays(diasAntecedenciaLembrete)
+        );
+
+        for (Emprestimo emprestimo : proximosDoVencimento) {
+            emprestimo.setLembretePrazoEnviado(true);
+            emprestimoRepository.save(emprestimo);
+
+            Leitor leitor = emprestimo.getLeitor();
+            eventPublisher.publishEvent(new PrazoDevolucaoProximoEvent(
+                    leitor.getUsuario().getEmail(), leitor.getUsuario().getNome(),
+                    emprestimo.getExemplar().getLivro().getTitulo(), emprestimo.getDataDevolucaoPrevista()
+            ));
+        }
+
+        return proximosDoVencimento.size();
     }
 
     /**

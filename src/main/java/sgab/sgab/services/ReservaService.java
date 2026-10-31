@@ -4,8 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sgab.sgab.events.ReservaDisponivelEvent;
+import sgab.sgab.events.ReservaNaFilaEvent;
 import sgab.sgab.repositories.ExemplarRepository;
 import sgab.sgab.repositories.ReservaRepository;
 import sgab.sgab.repositories.LeitorRepository;
@@ -26,15 +29,18 @@ public class ReservaService {
     private final ReservaRepository reservaRepository;
     private final LeitorRepository leitorRepository;
     private final ExemplarRepository exemplarRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ReservaService(
             ReservaRepository reservaRepository,
             LeitorRepository leitorRepository,
-            ExemplarRepository exemplarRepository
+            ExemplarRepository exemplarRepository,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.reservaRepository = reservaRepository;
         this.leitorRepository = leitorRepository;
         this.exemplarRepository = exemplarRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -74,6 +80,9 @@ public class ReservaService {
             separarParaRetirada(reserva, exemplar);
         } else {
             reserva.setStatus(StatusReserva.ATIVA);
+            eventPublisher.publishEvent(new ReservaNaFilaEvent(
+                    leitor.getUsuario().getEmail(), leitor.getUsuario().getNome(), exemplar.getLivro().getTitulo()
+            ));
         }
 
         return converterParaResponse(reservaRepository.save(reserva));
@@ -150,10 +159,17 @@ public class ReservaService {
         exemplarRepository.save(exemplar);
     }
 
+    // Avisa o leitor por e-mail: vale tanto para a reserva feita agora quanto para a vez dele na fila
     private void separarParaRetirada(Reserva reserva, Exemplar exemplar) {
         reserva.setStatus(StatusReserva.AGUARDANDO_RETIRADA);
         reserva.setDataLimiteRetirada(LocalDateTime.now().plusDays(DIAS_PARA_RETIRADA));
         exemplar.setStatus(StatusExemplar.RESERVADO);
+
+        Leitor leitor = reserva.getLeitor();
+        eventPublisher.publishEvent(new ReservaDisponivelEvent(
+                leitor.getUsuario().getEmail(), leitor.getUsuario().getNome(),
+                exemplar.getLivro().getTitulo(), reserva.getDataLimiteRetirada()
+        ));
     }
 
     private Reserva buscarEntidadePorId(Integer id) {

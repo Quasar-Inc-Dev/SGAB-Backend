@@ -60,6 +60,14 @@ VALUES
  'Fundamentos e conceitos avançados de sistemas operacionais.',
  'Andrew S. Tanenbaum', 'Pearson', 'ATIVO', 'Português', 'Tecnologia', 800, 2016, 'Técnico', 'sistemas operacionais,computação,hardware');
 
+-- Capas: mesma URL que a importação por ISBN usa (Open Library).
+-- Aprendendo SQL, Algoritmos e Padrões de Projeto não têm capa lá e ficam sem imagem.
+UPDATE livro SET img_url = CONCAT('https://covers.openlibrary.org/b/isbn/', isbn, '-L.jpg')
+WHERE isbn IN (
+    '9780132350884', '9788576082675', '9788582850350', '9788582850343', '9788543004792', '9788539004119',
+    '9788539003839', '9788501012074', '9788550804606', '9788585910174', '9788547000240', '9788543005676'
+);
+
 -- Exemplares (cópias físicas): 1 por livro, e uma 2ª cópia para os 5 primeiros
 INSERT INTO exemplar (livro_id, tombo, status, data_aquisicao, versao)
 SELECT livro_id, CONCAT('L', livro_id, '-001'), 'DISPONIVEL', CURRENT_TIMESTAMP, 0 FROM livro;

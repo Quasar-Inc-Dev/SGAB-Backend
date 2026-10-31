@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,9 @@ import sgab.sgab.entities.Usuario;
 import sgab.sgab.entities.Enum.StatusExemplar;
 import sgab.sgab.entities.Enum.StatusSolicitacao;
 import sgab.sgab.entities.Enum.TipoSolicitacao;
+import sgab.sgab.events.EmprestimoAprovadoEvent;
+import sgab.sgab.events.RetiradaExpiradaEvent;
+import sgab.sgab.events.SolicitacaoRecusadaEvent;
 import sgab.sgab.exceptions.LivroNaoEncontradoException;
 import sgab.sgab.exceptions.RecursoNaoEncontradoException;
 import sgab.sgab.repositories.ExemplarRepository;
@@ -36,6 +40,7 @@ public class SolicitacaoService {
     private final ReservaRepository reservaRepository;
     private final EmprestimoService emprestimoService;
     private final ReservaService reservaService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // Prazo para o leitor retirar no balcão o exemplar separado na aprovação
     private final int diasParaRetirada;
@@ -48,6 +53,7 @@ public class SolicitacaoService {
             ReservaRepository reservaRepository,
             EmprestimoService emprestimoService,
             ReservaService reservaService,
+            ApplicationEventPublisher eventPublisher,
             @Value("${sgab.solicitacao.dias-para-retirada:3}") int diasParaRetirada
     ) {
         this.solicitacaoRepository = solicitacaoRepository;
@@ -57,6 +63,7 @@ public class SolicitacaoService {
         this.reservaRepository = reservaRepository;
         this.emprestimoService = emprestimoService;
         this.reservaService = reservaService;
+        this.eventPublisher = eventPublisher;
         this.diasParaRetirada = diasParaRetirada;
     }
 
@@ -155,7 +162,14 @@ public class SolicitacaoService {
             solicitacao.setExemplar(exemplar);
             solicitacao.setDataLimiteRetirada(LocalDateTime.now().plusDays(diasParaRetirada));
             registrarAnalise(solicitacao, StatusSolicitacao.AGUARDANDO_RETIRADA, analista);
+
+            Usuario usuarioLeitor = solicitacao.getLeitor().getUsuario();
+            eventPublisher.publishEvent(new EmprestimoAprovadoEvent(
+                    usuarioLeitor.getEmail(), usuarioLeitor.getNome(),
+                    solicitacao.getLivro().getTitulo(), solicitacao.getDataLimiteRetirada()
+            ));
         } else {
+            // O aviso da reserva (separada ou na fila) é publicado pelo ReservaService
             ReservaResponseDTO reserva = reservaService.solicitarReserva(
                     solicitacao.getExemplar().getExemplarId(), solicitacao.getLeitor().getId()
             );
@@ -193,6 +207,12 @@ public class SolicitacaoService {
 
         solicitacao.setMotivoRecusa(motivo);
         registrarAnalise(solicitacao, StatusSolicitacao.RECUSADA, analista);
+
+        Usuario usuarioLeitor = solicitacao.getLeitor().getUsuario();
+        eventPublisher.publishEvent(new SolicitacaoRecusadaEvent(
+                usuarioLeitor.getEmail(), usuarioLeitor.getNome(),
+                solicitacao.getLivro().getTitulo(), solicitacao.getTipo(), motivo
+        ));
 
         return converterParaResponse(solicitacaoRepository.save(solicitacao));
     }
@@ -236,6 +256,12 @@ public class SolicitacaoService {
         for (Solicitacao solicitacao : vencidas) {
             solicitacao.setStatus(StatusSolicitacao.EXPIRADA);
             solicitacaoRepository.save(solicitacao);
+
+            Usuario usuarioLeitor = solicitacao.getLeitor().getUsuario();
+            eventPublisher.publishEvent(new RetiradaExpiradaEvent(
+                    usuarioLeitor.getEmail(), usuarioLeitor.getNome(), solicitacao.getLivro().getTitulo()
+            ));
+
             reservaService.destinarExemplarLiberado(solicitacao.getExemplar());
         }
 
