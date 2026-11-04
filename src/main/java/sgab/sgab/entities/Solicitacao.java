@@ -14,7 +14,15 @@ import sgab.sgab.entities.Enum.TipoSolicitacao;
  * Só quando aprovado vira um Emprestimo ou uma Reserva de fato.
  */
 @Entity
-@Table(name = "solicitacao")
+@Table(name = "solicitacao", indexes = {
+        // Fila do funcionário (por status, em ordem de chegada) e prazos de retirada vencidos
+        @Index(name = "idx_solicitacao_status_data", columnList = "status, data_solicitacao"),
+        @Index(name = "idx_solicitacao_status_limite", columnList = "status, data_limite_retirada"),
+        // "Minhas solicitações" do leitor
+        @Index(name = "idx_solicitacao_leitor_data", columnList = "leitor_id, data_solicitacao"),
+        @Index(name = "idx_solicitacao_livro", columnList = "livro_id"),
+        @Index(name = "idx_solicitacao_exemplar", columnList = "exemplar_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,16 +40,16 @@ public class Solicitacao {
     @Column(nullable = false, length = 20)
     private StatusSolicitacao status = StatusSolicitacao.PENDENTE;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leitor_id", nullable = false)
     private Leitor leitor;
 
     // Empréstimo é pedido pelo livro; reserva é pedida por um exemplar específico
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "livro_id", nullable = false)
     private Livro livro;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exemplar_id")
     private Exemplar exemplar;
 
@@ -51,7 +59,7 @@ public class Solicitacao {
     @Column(name = "data_analise")
     private LocalDateTime dataAnalise;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "analisado_por")
     private Usuario analisadoPor;
 
@@ -65,16 +73,16 @@ public class Solicitacao {
     @Column(name = "data_retirada")
     private LocalDateTime dataRetirada;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "retirada_confirmada_por")
     private Usuario retiradaConfirmadaPor;
 
     // Resultado da aprovação
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emprestimo_id")
     private Emprestimo emprestimo;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reserva_id")
     private Reserva reserva;
 }

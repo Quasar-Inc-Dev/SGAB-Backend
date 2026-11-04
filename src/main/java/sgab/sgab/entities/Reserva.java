@@ -8,7 +8,11 @@ import lombok.Setter;
 import sgab.sgab.entities.Enum.StatusReserva;
 
 @Entity
-@Table(name = "reserva")
+@Table(name = "reserva", indexes = {
+        // Fila de um exemplar: reservas por status, da mais antiga para a mais nova
+        @Index(name = "idx_reserva_exemplar_status_data", columnList = "exemplar_id, status, data_reserva"),
+        @Index(name = "idx_reserva_leitor", columnList = "leitor_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,11 +23,11 @@ public class Reserva {
     private Integer reservaId;
 
     // A reserva é de um exemplar específico; cada exemplar tem sua própria fila
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exemplar_id", nullable = false)
     private Exemplar exemplar;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leitor_id", nullable = false)
     private Leitor leitor;
 

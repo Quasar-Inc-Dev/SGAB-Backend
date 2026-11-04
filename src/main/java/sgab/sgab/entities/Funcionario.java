@@ -21,7 +21,7 @@ public class Funcionario {
     @Column(length = 11)
     private String cpf;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "id")
     private Usuario usuario;

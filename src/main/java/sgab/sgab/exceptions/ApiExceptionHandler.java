@@ -3,6 +3,7 @@ package sgab.sgab.exceptions;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
@@ -89,6 +90,13 @@ public class ApiExceptionHandler {
         resposta.put("erro", "A imagem é maior que o tamanho máximo permitido (5 MB)");
 
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(resposta);
+    }
+
+    // ?sort=campoQueNaoExiste na paginação
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErroResponseDTO> tratarOrdenacaoInvalida(PropertyReferenceException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO("Campo de ordenação inválido: " + e.getPropertyName()));
     }
 
     @ExceptionHandler(ArmazenamentoException.class)

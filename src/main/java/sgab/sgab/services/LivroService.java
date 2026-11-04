@@ -1,13 +1,19 @@
 package sgab.sgab.services;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import sgab.sgab.repositories.EmprestimoRepository;
 import sgab.sgab.repositories.ExemplarRepository;
+import sgab.sgab.repositories.ExemplarRepository.ContagemExemplares;
 import sgab.sgab.repositories.LivroRepository;
 import sgab.sgab.repositories.ReservaRepository;
 import sgab.sgab.repositories.SolicitacaoRepository;
@@ -15,6 +21,7 @@ import sgab.sgab.dtos.request.LivroRequestDTO;
 import sgab.sgab.dtos.response.ExemplarResponseDTO;
 import sgab.sgab.dtos.response.LivroResponseDTO;
 import sgab.sgab.entities.Livro;
+import sgab.sgab.entities.Enum.StatusExemplar;
 import sgab.sgab.exceptions.LivroNaoEncontradoException;
 
 @Service
@@ -67,18 +74,22 @@ public class LivroService {
         return converterParaResponse(salvo);
     }
 
-    public List<LivroResponseDTO> listarTodos() {
-        return livroRepository.findAll()
-                .stream()
-                .map(this::converterParaResponse)
-                .toList();
+    // 2 consultas por página, não importa quantos livros ela tenha: os livros e as contagens de exemplares
+    @Transactional(readOnly = true)
+    public Page<LivroResponseDTO> listar(Pageable pageable) {
+        Page<Livro> livros = livroRepository.findAll(pageable);
+        Map<Integer, ContagemExemplares> contagens = contarExemplares(livros.getContent());
+
+        return livros.map(livro -> converterParaResponse(livro, contagens.get(livro.getLivroId())));
     }
 
+    @Transactional(readOnly = true)
     public LivroResponseDTO buscarPorId(Integer id) {
         Livro livro = buscarEntidadePorId(id);
         return converterParaResponse(livro);
     }
 
+    @Transactional(readOnly = true)
     public LivroResponseDTO buscarPorIsbn(String isbn) {
         Livro livro = livroRepository.findByISBN(normalizarIsbn(isbn))
                 .orElseThrow(() -> new LivroNaoEncontradoException(
@@ -171,6 +182,7 @@ public class LivroService {
         return exemplarService.adicionarExemplares(livro, quantidade);
     }
 
+    @Transactional(readOnly = true)
     public List<ExemplarResponseDTO> listarExemplares(Integer livroId) {
         buscarEntidadePorId(livroId);
         return exemplarService.listarPorLivro(livroId);
@@ -210,7 +222,23 @@ public class LivroService {
         }
     }
 
+    private Map<Integer, ContagemExemplares> contarExemplares(List<Livro> livros) {
+        if (livros.isEmpty()) {
+            return Map.of();
+        }
+        List<Integer> ids = livros.stream().map(Livro::getLivroId).toList();
+
+        return exemplarRepository.contarPorLivros(ids, StatusExemplar.DISPONIVEL)
+                .stream()
+                .collect(Collectors.toMap(ContagemExemplares::getLivroId, Function.identity()));
+    }
+
     private LivroResponseDTO converterParaResponse(Livro livro) {
+        return converterParaResponse(livro, contarExemplares(List.of(livro)).get(livro.getLivroId()));
+    }
+
+    // contagem == null: o livro não tem exemplares
+    private LivroResponseDTO converterParaResponse(Livro livro, ContagemExemplares contagem) {
         return new LivroResponseDTO(
                 livro.getLivroId(),
                 livro.getISBN(),
@@ -229,8 +257,8 @@ public class LivroService {
                 livro.getArea(),
                 livro.getLivroStatus(),
                 livro.getImgUrl(),
-                exemplarService.contarTotal(livro.getLivroId()),
-                exemplarService.contarDisponiveis(livro.getLivroId())
+                contagem == null ? 0 : contagem.getTotal(),
+                contagem == null ? 0 : contagem.getDisponiveis()
         );
     }
 

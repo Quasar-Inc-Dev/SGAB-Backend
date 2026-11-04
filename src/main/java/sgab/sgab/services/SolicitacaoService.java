@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,23 +118,21 @@ public class SolicitacaoService {
         return converterParaResponse(solicitacaoRepository.save(solicitacao));
     }
 
-    public List<SolicitacaoResponseDTO> listarPorStatus(StatusSolicitacao status, TipoSolicitacao tipo) {
-        List<Solicitacao> solicitacoes = tipo == null
-                ? solicitacaoRepository.findByStatusOrderByDataSolicitacaoAsc(status)
-                : solicitacaoRepository.findByStatusAndTipoOrderByDataSolicitacaoAsc(status, tipo);
+    @Transactional(readOnly = true)
+    public Page<SolicitacaoResponseDTO> listarPorStatus(StatusSolicitacao status, TipoSolicitacao tipo, Pageable pageable) {
+        Page<Solicitacao> solicitacoes = tipo == null
+                ? solicitacaoRepository.findByStatusOrderByDataSolicitacaoAsc(status, pageable)
+                : solicitacaoRepository.findByStatusAndTipoOrderByDataSolicitacaoAsc(status, tipo, pageable);
 
-        return solicitacoes.stream()
-                .map(this::converterParaResponse)
-                .toList();
+        return solicitacoes.map(this::converterParaResponse);
     }
 
-    public List<SolicitacaoResponseDTO> listarDoLeitor(Usuario usuarioLogado) {
+    @Transactional(readOnly = true)
+    public Page<SolicitacaoResponseDTO> listarDoLeitor(Usuario usuarioLogado, Pageable pageable) {
         Leitor leitor = buscarLeitor(usuarioLogado);
 
-        return solicitacaoRepository.findByLeitorIdOrderByDataSolicitacaoDesc(leitor.getId())
-                .stream()
-                .map(this::converterParaResponse)
-                .toList();
+        return solicitacaoRepository.findByLeitorIdOrderByDataSolicitacaoDesc(leitor.getId(), pageable)
+                .map(this::converterParaResponse);
     }
 
     /**
@@ -254,8 +254,8 @@ public class SolicitacaoService {
         );
 
         for (Solicitacao solicitacao : vencidas) {
+            // Entidade gerenciada: a alteração é gravada no commit, sem save()
             solicitacao.setStatus(StatusSolicitacao.EXPIRADA);
-            solicitacaoRepository.save(solicitacao);
 
             Usuario usuarioLeitor = solicitacao.getLeitor().getUsuario();
             eventPublisher.publishEvent(new RetiradaExpiradaEvent(

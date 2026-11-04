@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sgab.sgab.events.EmprestimoRegistradoEvent;
@@ -57,13 +59,12 @@ public class EmprestimoService {
         this.diasAntecedenciaLembrete = diasAntecedenciaLembrete;
     }
 
-    public List<EmprestimoResponseDTO> listarTodos() {
-        return emprestimoRepository.findAll()
-                .stream()
-                .map(this::converterParaResponse)
-                .toList();
+    @Transactional(readOnly = true)
+    public Page<EmprestimoResponseDTO> listar(Pageable pageable) {
+        return emprestimoRepository.findAll(pageable).map(this::converterParaResponse);
     }
 
+    @Transactional(readOnly = true)
     public EmprestimoResponseDTO buscarPorId(Integer id) {
         return converterParaResponse(buscarEntidadePorId(id));
     }
@@ -174,8 +175,8 @@ public class EmprestimoService {
         );
 
         for (Emprestimo emprestimo : proximosDoVencimento) {
+            // A entidade é gerenciada pela transação: a alteração é gravada no commit, sem save()
             emprestimo.setLembretePrazoEnviado(true);
-            emprestimoRepository.save(emprestimo);
 
             Leitor leitor = emprestimo.getLeitor();
             eventPublisher.publishEvent(new PrazoDevolucaoProximoEvent(

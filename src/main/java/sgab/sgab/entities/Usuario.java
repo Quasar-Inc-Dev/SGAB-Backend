@@ -11,7 +11,8 @@ import sgab.sgab.entities.valueobjects.validation.email.ValidEmail;
 import sgab.sgab.security.CpfCryptoConverter;
 
 @Entity
-@Table(name = "usuario")
+// O e-mail é consultado a cada requisição autenticada (filtro do JWT) e no login
+@Table(name = "usuario", indexes = @Index(name = "idx_usuario_email", columnList = "email"))
 @Getter
 @Setter
 @NoArgsConstructor

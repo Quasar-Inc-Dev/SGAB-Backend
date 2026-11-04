@@ -3,7 +3,7 @@ package sgab.sgab.services;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import sgab.sgab.repositories.UsuarioRepository;
 import sgab.sgab.dtos.response.CpfNaoEncontradoResponseDTO;
 import sgab.sgab.dtos.response.UsuarioResponseDTO;
@@ -39,6 +39,7 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    @Transactional(readOnly = true)
     public CpfNaoEncontradoResponseDTO buscarPorCpf(String cpf) {
         Usuario usuario = usuarioRepository.findByCpf(cpf)
             .orElseThrow(() -> new CpfNaoEncontrado("CPF de usuário não encontrado na base de dados!"));
@@ -49,6 +50,7 @@ public class UsuarioService {
         );
     }
 
+    @Transactional(readOnly = true)
     public UsuarioResponseDTO buscarUsuarioLogado(Integer id) {
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new CpfNaoEncontrado("Usuário não encontrado"));

@@ -50,19 +50,12 @@ public class ExemplarService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ExemplarResponseDTO> listarPorLivro(Integer livroId) {
         return exemplarRepository.findByLivroLivroId(livroId)
                 .stream()
                 .map(this::converterParaResponse)
                 .toList();
-    }
-
-    public long contarTotal(Integer livroId) {
-        return exemplarRepository.countByLivroLivroId(livroId);
-    }
-
-    public long contarDisponiveis(Integer livroId) {
-        return exemplarRepository.countByLivroLivroIdAndStatus(livroId, StatusExemplar.DISPONIVEL);
     }
 
     // Formato: L<id do livro>-<sequência>, ex.: L12-003

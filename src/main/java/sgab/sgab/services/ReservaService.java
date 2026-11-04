@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sgab.sgab.events.ReservaDisponivelEvent;
@@ -88,13 +90,12 @@ public class ReservaService {
         return converterParaResponse(reservaRepository.save(reserva));
     }
 
-    public List<ReservaResponseDTO> listarTodas() {
-        return reservaRepository.findAll()
-                .stream()
-                .map(this::converterParaResponse)
-                .toList();
+    @Transactional(readOnly = true)
+    public Page<ReservaResponseDTO> listar(Pageable pageable) {
+        return reservaRepository.findAll(pageable).map(this::converterParaResponse);
     }
 
+    @Transactional(readOnly = true)
     public ReservaResponseDTO buscarPorId(Integer id) {
         return converterParaResponse(buscarEntidadePorId(id));
     }

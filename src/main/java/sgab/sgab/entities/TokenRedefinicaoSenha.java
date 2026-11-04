@@ -12,7 +12,8 @@ import lombok.Setter;
  * Só o hash SHA-256 é gravado: quem ler o banco não consegue usar o link.
  */
 @Entity
-@Table(name = "token_redefinicao_senha")
+@Table(name = "token_redefinicao_senha",
+        indexes = @Index(name = "idx_token_redefinicao_usuario", columnList = "usuario_id"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,7 +24,7 @@ public class TokenRedefinicaoSenha {
     @Column(name = "token_id")
     private Integer tokenId;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 

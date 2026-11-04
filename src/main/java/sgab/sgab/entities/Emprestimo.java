@@ -8,7 +8,12 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "emprestimo")
+@Table(name = "emprestimo", indexes = {
+        @Index(name = "idx_emprestimo_exemplar", columnList = "exemplar_id"),
+        @Index(name = "idx_emprestimo_leitor", columnList = "leitor_id"),
+        // Busca do agendador de lembretes: empréstimos em aberto por data de vencimento
+        @Index(name = "idx_emprestimo_aberto_vencimento", columnList = "status_devolucao, data_devolucao_prevista")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,11 +24,11 @@ public class Emprestimo {
     @Column(name = "emprestimo_id")
     private Integer emprestimoId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exemplar_id", nullable = false)
     private Exemplar exemplar;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leitor_id", nullable = false)
     private Leitor leitor;
 

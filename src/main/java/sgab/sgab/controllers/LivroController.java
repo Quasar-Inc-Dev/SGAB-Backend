@@ -2,6 +2,9 @@ package sgab.sgab.controllers;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -61,9 +64,12 @@ public class LivroController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // ?page=0&size=20&sort=titulo,asc
     @GetMapping
-    public ResponseEntity<List<LivroResponseDTO>> listarTodos() {
-        return ResponseEntity.ok(livroService.listarTodos());
+    public ResponseEntity<Page<LivroResponseDTO>> listar(
+            @PageableDefault(size = 20, sort = "titulo") Pageable pageable
+    ) {
+        return ResponseEntity.ok(livroService.listar(pageable));
     }
 
     @GetMapping("/{id}")

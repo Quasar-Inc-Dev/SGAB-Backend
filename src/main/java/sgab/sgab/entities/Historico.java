@@ -17,11 +17,11 @@ public class Historico {
     @Column(name = "historico_id")
     private Integer historicoId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emprestimo_id")
     private Emprestimo emprestimo;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reserva_id")
     private Reserva reserva;
 }

@@ -1,6 +1,9 @@
 package sgab.sgab.controllers;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,10 +23,12 @@ public class EmprestimoController {
     }
 
 
+    // ?page=0&size=20&sort=dataEmprestimo,desc
     @GetMapping
-    public ResponseEntity<List<EmprestimoResponseDTO>> listarTodos() {
-        List<EmprestimoResponseDTO> emprestimos = emprestimoService.listarTodos();
-        return ResponseEntity.ok(emprestimos);
+    public ResponseEntity<Page<EmprestimoResponseDTO>> listar(
+            @PageableDefault(size = 20, sort = "dataEmprestimo", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(emprestimoService.listar(pageable));
     }
 
 

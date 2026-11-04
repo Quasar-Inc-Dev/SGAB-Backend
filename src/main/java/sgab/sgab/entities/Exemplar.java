@@ -9,7 +9,8 @@ import sgab.sgab.entities.Enum.StatusExemplar;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "exemplar")
+// O Postgres não indexa chaves estrangeiras sozinho; livro_id + status cobre contagens e "primeiro disponível"
+@Table(name = "exemplar", indexes = @Index(name = "idx_exemplar_livro_status", columnList = "livro_id, status"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +20,7 @@ public class Exemplar {
     @Column(name = "exemplar_id")
     private Integer exemplarId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "livro_id", nullable = false)
     private Livro livro;
 

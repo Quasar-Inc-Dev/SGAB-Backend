@@ -1,7 +1,8 @@
 package sgab.sgab.controllers;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -47,11 +48,13 @@ public class SolicitacaoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // Mais recentes primeiro; ?page=0&size=20
     @GetMapping("/minhas")
-    public ResponseEntity<List<SolicitacaoResponseDTO>> listarMinhas(
-            @AuthenticationPrincipal UsuarioDetails usuarioDetails
+    public ResponseEntity<Page<SolicitacaoResponseDTO>> listarMinhas(
+            @AuthenticationPrincipal UsuarioDetails usuarioDetails,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(solicitacaoService.listarDoLeitor(usuarioDetails.getUsuario()));
+        return ResponseEntity.ok(solicitacaoService.listarDoLeitor(usuarioDetails.getUsuario(), pageable));
     }
 
     @PatchMapping("/{id}/cancelar")
@@ -64,12 +67,14 @@ public class SolicitacaoController {
 
     // ---- Funcionário / Administrador ----
 
+    // Mais antigas primeiro (ordem de chegada); ?status=PENDENTE&tipo=EMPRESTIMO&page=0&size=20
     @GetMapping
-    public ResponseEntity<List<SolicitacaoResponseDTO>> listar(
+    public ResponseEntity<Page<SolicitacaoResponseDTO>> listar(
             @RequestParam(defaultValue = "PENDENTE") StatusSolicitacao status,
-            @RequestParam(required = false) TipoSolicitacao tipo
+            @RequestParam(required = false) TipoSolicitacao tipo,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(solicitacaoService.listarPorStatus(status, tipo));
+        return ResponseEntity.ok(solicitacaoService.listarPorStatus(status, tipo, pageable));
     }
 
     @PatchMapping("/{id}/aprovar")

@@ -3,6 +3,9 @@ package sgab.sgab.repositories;
 import java.util.Collection;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import sgab.sgab.entities.Reserva;
@@ -10,6 +13,11 @@ import sgab.sgab.entities.Enum.StatusReserva;
 
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
+
+    // Traz junto (num único SELECT com JOIN) tudo o que o ReservaResponseDTO usa
+    @Override
+    @EntityGraph(attributePaths = {"exemplar", "exemplar.livro", "leitor", "leitor.usuario"})
+    Page<Reserva> findAll(Pageable pageable);
 
     boolean existsByExemplarLivroLivroId(Integer livroId);
 

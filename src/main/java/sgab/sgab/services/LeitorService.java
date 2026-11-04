@@ -1,11 +1,11 @@
 package sgab.sgab.services;
 
-import java.util.List;
-
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.Transactional;
 import sgab.sgab.events.UsuarioCadastradoEvent;
 import sgab.sgab.repositories.LeitorRepository;
 import sgab.sgab.dtos.request.LeitorRequestDTO;
@@ -65,16 +65,15 @@ public class LeitorService {
             usuarioService.desativarUsuario(leitor.getId());
     }
 
-    public List<LeitorResponseDTO> listarTodos() {
-        List<Leitor> leitores = leitorRepository.findAll();
-
-        return leitores.stream()
+    @Transactional(readOnly = true)
+    public Page<LeitorResponseDTO> listar(Pageable pageable) {
+        return leitorRepository.findAll(pageable)
             .map(leitor -> new LeitorResponseDTO(
                 leitor.getUsuario().getId(), leitor.getCpf(),
                 leitor.getUsuario().getNome(), leitor.getUsuario().getEmail(),
                 leitor.getGenero(), leitor.getDataNascimento(),
                 leitor.getTipoLeitor(), leitor.getStatusLeitor()
-            )).toList();
+            ));
     }
 
     @Transactional

@@ -73,7 +73,9 @@ public class LivroIsbnService {
                 .uri(uriBuilder -> uriBuilder
                         .path("/volumes")
                         .queryParam("q", "isbn:" + isbn)
-                        .queryParam("key", googleApiKey)
+                        // key vazia faz o Google responder 400; só envia quando configurada
+                        .queryParamIfPresent("key", googleApiKey == null || googleApiKey.isBlank()
+                                ? java.util.Optional.empty() : java.util.Optional.of(googleApiKey))
                         .build())
                 .retrieve()
                 .body(JsonNode.class);
