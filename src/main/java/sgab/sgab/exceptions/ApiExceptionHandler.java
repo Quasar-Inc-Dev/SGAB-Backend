@@ -91,6 +91,11 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(resposta);
     }
 
+    @ExceptionHandler(ArmazenamentoException.class)
+    public ResponseEntity<ErroResponseDTO> tratarFalhaArmazenamento(ArmazenamentoException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErroResponseDTO(e.getMessage()));
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErroResponseDTO> handleLoginInvalido(BadCredentialsException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErroResponseDTO("Email ou senha inválidos"));

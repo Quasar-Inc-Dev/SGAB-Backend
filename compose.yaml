@@ -1,9 +1,13 @@
 services:
-  sqlserver:
-    image: 'mcr.microsoft.com/mssql/server:latest'
-    environment:
-      - 'ACCEPT_EULA=yes'
-      - 'MSSQL_PID=express'
-      - 'MSSQL_SA_PASSWORD=verYs3cret'
+  backend:
+    build: .
+    image: sgab-backend
     ports:
-      - '1433'
+      - "8080:8080"
+    # Credenciais do banco, do e-mail e chaves ficam no .env (copie de .env.example)
+    env_file: .env
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    restart: unless-stopped

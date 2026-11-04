@@ -1,5 +1,8 @@
 package sgab.sgab.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,14 +14,17 @@ import java.time.format.DateTimeFormatter;
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+
+    // Opcional: sem spring.mail.host configurado, a aplicação sobe e os e-mails são apenas registrados no log
+    private final ObjectProvider<JavaMailSender> mailSender;
     private final String remetente;
     private final String urlFrontend;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // O remetente precisa ser a mesma conta autenticada no SMTP, senão o servidor recusa o envio
-    public EmailService(JavaMailSender mailSender,
-            @Value("${sgab.email.remetente:${spring.mail.username}}") String remetente,
+    public EmailService(ObjectProvider<JavaMailSender> mailSender,
+            @Value("${sgab.email.remetente:${spring.mail.username:}}") String remetente,
             @Value("${sgab.frontend.url:http://localhost:4200}") String urlFrontend) {
         this.mailSender = mailSender;
         this.remetente = remetente;
@@ -27,12 +33,18 @@ public class EmailService {
 
 
     private void enviarMensagem(String destinatario, String assunto, String texto) {
+        JavaMailSender sender = mailSender.getIfAvailable();
+        if (sender == null) {
+            log.warn("E-mail não configurado (spring.mail.host); mensagem \"{}\" para {} não foi enviada", assunto, destinatario);
+            return;
+        }
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(remetente);
         message.setTo(destinatario);
         message.setSubject(assunto);
         message.setText(texto);
-        mailSender.send(message);
+        sender.send(message);
     }
 
     public void enviarEmailCriacaoConta(String destinatario, String nomeUsuario) {

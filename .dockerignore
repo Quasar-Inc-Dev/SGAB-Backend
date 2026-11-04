@@ -1,0 +1,10 @@
+# Nada disso deve ir para a imagem
+target/
+upload/
+.git/
+.idea/
+.vscode/
+*.iml
+# Credenciais: entram por variáveis de ambiente, nunca dentro da imagem
+secrets.properties
+.env

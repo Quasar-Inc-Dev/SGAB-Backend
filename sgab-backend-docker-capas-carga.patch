@@ -1,0 +1,532 @@
+Subject: [PATCH] Docker multi-stage, capas otimizadas, e-mail opcional e dados
+ de teste
+
+---
+ .dockerignore                                 |  10 ++
+ .env.example                                  |  23 +++
+ .gitignore                                    |   3 +
+ Dockerfile                                    |  32 ++++
+ compose.yaml                                  |  24 ++-
+ .../sgab/sgab/config/DadosTesteSeeder.java    | 143 ++++++++++++++++++
+ .../java/sgab/sgab/config/UploadConfig.java   |   7 +-
+ .../sgab/events/NotificacaoEmailListener.java |  12 +-
+ .../services/ArmazenamentoImagemService.java  |  81 +++++++++-
+ .../java/sgab/sgab/services/EmailService.java |  20 ++-
+ 10 files changed, 336 insertions(+), 19 deletions(-)
+ create mode 100644 .dockerignore
+ create mode 100644 .env.example
+ create mode 100644 Dockerfile
+ create mode 100644 src/main/java/sgab/sgab/config/DadosTesteSeeder.java
+
+diff --git a/.dockerignore b/.dockerignore
+new file mode 100644
+index 0000000..c95926e
+--- /dev/null
++++ b/.dockerignore
+@@ -0,0 +1,10 @@
++# Nada disso deve ir para a imagem
++target/
++upload/
++.git/
++.idea/
++.vscode/
++*.iml
++# Credenciais: entram por variáveis de ambiente, nunca dentro da imagem
++secrets.properties
++.env
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..fe80d96
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,23 @@
++# Copie para .env e preencha. O .env NÃO vai para o Git.
++
++# ---- Banco (Supabase, pooler em modo sessão) ----
++SPRING_DATASOURCE_URL=jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require
++SPRING_DATASOURCE_USERNAME=postgres.bvcxsgixwxerblfmyjjb
++SPRING_DATASOURCE_PASSWORD=
++SPRING_DATASOURCE_DRIVERCLASSNAME=org.postgresql.Driver
++SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE=5
++
++# ---- E-mail (Gmail) ----
++SPRING_MAIL_HOST=smtp.gmail.com
++SPRING_MAIL_PORT=587
++SPRING_MAIL_USERNAME=
++SPRING_MAIL_PASSWORD=
++# false = não envia nenhum e-mail (use ao gerar dados de teste)
++SGAB_EMAIL_HABILITADO=true
++
++# ---- Chaves ----
++API_SECURITY_CPF_SECRET=
++
++# ---- Dados de teste (profile "carga") ----
++# SPRING_PROFILES_ACTIVE=carga
++# SGAB_CARGA_QUANTIDADE=50
+diff --git a/.gitignore b/.gitignore
+index c44a7d4..9237e99 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -37,3 +37,6 @@ secrets.properties
+ 
+ ### Imagens enviadas pelos usuários (capas) ###
+ upload/
++
++### Docker ###
++.env
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+index 0000000..49279ff
+--- /dev/null
++++ b/Dockerfile
+@@ -0,0 +1,32 @@
++# syntax=docker/dockerfile:1
++
++# ---------- Etapa 1: compila o projeto ----------
++FROM eclipse-temurin:25-jdk-alpine AS build
++WORKDIR /app
++
++# Primeiro só o que define as dependências: se o pom.xml não mudar, esta camada é reaproveitada
++COPY .mvn .mvn
++COPY mvnw pom.xml ./
++# Remove CRLF caso o mvnw tenha vindo do Windows e garante permissão de execução
++RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
++RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q dependency:go-offline
++
++# Depois o código-fonte: mudar uma classe não baixa as dependências de novo
++COPY src src
++RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q package -DskipTests \
++    && cp target/*.jar app.jar
++
++# ---------- Etapa 2: imagem final, só com o JRE e o .jar ----------
++FROM eclipse-temurin:25-jre-alpine
++WORKDIR /app
++
++# Usuário sem privilégios e pasta das capas (montada como volume no compose)
++RUN addgroup -S sgab && adduser -S sgab -G sgab \
++    && mkdir -p /app/upload && chown sgab:sgab /app/upload
++USER sgab
++
++COPY --from=build /app/app.jar app.jar
++
++EXPOSE 8080
++# MaxRAMPercentage: a JVM respeita o limite de memória do contêiner
++ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
+diff --git a/compose.yaml b/compose.yaml
+index ae70fb8..5bf4b2b 100644
+--- a/compose.yaml
++++ b/compose.yaml
+@@ -1,9 +1,19 @@
+ services:
+-  sqlserver:
+-    image: 'mcr.microsoft.com/mssql/server:latest'
+-    environment:
+-      - 'ACCEPT_EULA=yes'
+-      - 'MSSQL_PID=express'
+-      - 'MSSQL_SA_PASSWORD=verYs3cret'
++  backend:
++    build: .
++    image: sgab-backend
+     ports:
+-      - '1433'
++      - "8080:8080"
++    # Credenciais do banco, do e-mail e chaves ficam no .env (copie de .env.example)
++    env_file: .env
++    volumes:
++      # As capas enviadas sobrevivem a rebuilds do contêiner
++      - capas:/app/upload
++    deploy:
++      resources:
++        limits:
++          memory: 1g
++    restart: unless-stopped
++
++volumes:
++  capas:
+diff --git a/src/main/java/sgab/sgab/config/DadosTesteSeeder.java b/src/main/java/sgab/sgab/config/DadosTesteSeeder.java
+new file mode 100644
+index 0000000..ee67c91
+--- /dev/null
++++ b/src/main/java/sgab/sgab/config/DadosTesteSeeder.java
+@@ -0,0 +1,143 @@
++package sgab.sgab.config;
++
++import java.time.LocalDate;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++import org.springframework.beans.factory.annotation.Value;
++import org.springframework.boot.CommandLineRunner;
++import org.springframework.context.annotation.Profile;
++import org.springframework.stereotype.Component;
++
++import sgab.sgab.dtos.request.LeitorRequestDTO;
++import sgab.sgab.dtos.request.LivroRequestDTO;
++import sgab.sgab.repositories.LivroRepository;
++import sgab.sgab.repositories.UsuarioRepository;
++import sgab.sgab.services.LeitorService;
++import sgab.sgab.services.LivroService;
++
++/**
++ * Gera livros e leitores fictícios para testes de carga.
++ *
++ * Só roda com o profile "carga". Passa pelos services (e não por SQL) para que
++ * a senha seja gravada com BCrypt, o CPF criptografado e os exemplares criados.
++ * Pode ser executado várias vezes: o que já existe é ignorado.
++ *
++ * Exemplo: SPRING_PROFILES_ACTIVE=carga SGAB_EMAIL_HABILITADO=false
++ */
++@Component
++@Profile("carga")
++public class DadosTesteSeeder implements CommandLineRunner {
++
++    private static final Logger log = LoggerFactory.getLogger(DadosTesteSeeder.class);
++
++    public static final String SENHA_PADRAO = "Teste@123";
++    private static final String[] AREAS = {"Tecnologia", "Gestão", "Logística", "Matemática", "Idiomas"};
++    private static final String[] GENEROS = {"Técnico", "Didático", "Literatura", "Referência"};
++
++    private final int quantidade;
++    private final LivroService livroService;
++    private final LeitorService leitorService;
++    private final LivroRepository livroRepository;
++    private final UsuarioRepository usuarioRepository;
++
++    public DadosTesteSeeder(LivroService livroService, LeitorService leitorService,
++            LivroRepository livroRepository, UsuarioRepository usuarioRepository,
++            @Value("${sgab.carga.quantidade:50}") int quantidade) {
++        this.livroService = livroService;
++        this.leitorService = leitorService;
++        this.livroRepository = livroRepository;
++        this.usuarioRepository = usuarioRepository;
++        this.quantidade = quantidade;
++    }
++
++    @Override
++    public void run(String... args) {
++        int livros = criarLivros();
++        int leitores = criarLeitores();
++        log.info("Dados de teste: {} livro(s) e {} leitor(es) criados (senha dos leitores: {})",
++                livros, leitores, SENHA_PADRAO);
++    }
++
++    private int criarLivros() {
++        int criados = 0;
++        for (int i = 1; i <= quantidade; i++) {
++            String isbn = gerarIsbn13(i);
++            if (livroRepository.existsByISBN(isbn)) {
++                continue;
++            }
++            livroService.cadastrar(new LivroRequestDTO(
++                    isbn,
++                    "Livro de Teste %03d".formatted(i),
++                    "Volume gerado para teste de carga",
++                    "Livro fictício criado automaticamente para os testes do SGAB.",
++                    "Autor Teste %02d".formatted((i % 10) + 1),
++                    "Editora Teste",
++                    "Português",
++                    100 + i * 3,
++                    2000 + (i % 25),
++                    GENEROS[i % GENEROS.length],
++                    "teste,carga",
++                    "T%03d".formatted(i),
++                    "000",
++                    AREAS[i % AREAS.length],
++                    "ATIVO",
++                    null,               // sem capa: o front mostra a inicial do título
++                    1 + (i % 3)         // 1 a 3 exemplares por livro
++            ));
++            criados++;
++        }
++        return criados;
++    }
++
++    private int criarLeitores() {
++        int criados = 0;
++        for (int i = 1; i <= quantidade; i++) {
++            String email = "sgab.teste%03d@aluno.cps.sp.gov.br".formatted(i);
++            if (usuarioRepository.existsByEmail(email)) {
++                continue;
++            }
++            leitorService.cadastrar(new LeitorRequestDTO(
++                    gerarCpf(i),
++                    "Leitor Teste %03d".formatted(i),
++                    email,
++                    SENHA_PADRAO,
++                    i % 2 == 0 ? "Feminino" : "Masculino",
++                    LocalDate.of(1990 + (i % 15), 1 + (i % 12), 1 + (i % 28)),
++                    i % 5 == 0 ? "PROFESSOR" : "LEITOR"
++            ));
++            criados++;
++        }
++        return criados;
++    }
++
++    /** CPF fictício com dígitos verificadores válidos. */
++    static String gerarCpf(int semente) {
++        String base = "%09d".formatted(123_000_000 + semente * 7_919);
++        int[] d = base.chars().map(c -> c - '0').toArray();
++
++        int soma = 0;
++        for (int k = 0; k < 9; k++) soma += d[k] * (10 - k);
++        int dv1 = 11 - soma % 11;
++        if (dv1 >= 10) dv1 = 0;
++
++        soma = 0;
++        for (int k = 0; k < 9; k++) soma += d[k] * (11 - k);
++        soma += dv1 * 2;
++        int dv2 = 11 - soma % 11;
++        if (dv2 >= 10) dv2 = 0;
++
++        return base + dv1 + dv2;
++    }
++
++    /** ISBN-13 fictício (prefixo 978-65-9999) com dígito verificador válido. */
++    static String gerarIsbn13(int semente) {
++        String base = "978659999" + "%03d".formatted(semente % 1000);
++        int soma = 0;
++        for (int k = 0; k < 12; k++) {
++            soma += (base.charAt(k) - '0') * (k % 2 == 0 ? 1 : 3);
++        }
++        int dv = (10 - soma % 10) % 10;
++        return base + dv;
++    }
++}
+diff --git a/src/main/java/sgab/sgab/config/UploadConfig.java b/src/main/java/sgab/sgab/config/UploadConfig.java
+index 15bf1c0..cce1529 100644
+--- a/src/main/java/sgab/sgab/config/UploadConfig.java
++++ b/src/main/java/sgab/sgab/config/UploadConfig.java
+@@ -1,6 +1,9 @@
+ package sgab.sgab.config;
+ 
++import java.time.Duration;
++
+ import org.springframework.context.annotation.Configuration;
++import org.springframework.http.CacheControl;
+ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+ 
+@@ -22,6 +25,8 @@ public class UploadConfig implements WebMvcConfigurer {
+     @Override
+     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+         registry.addResourceHandler(ArmazenamentoImagemService.PREFIXO_URL + "**")
+-                .addResourceLocations(armazenamentoImagemService.getDiretorioRaiz().toUri().toString());
++                .addResourceLocations(armazenamentoImagemService.getDiretorioRaiz().toUri().toString())
++                // Cada upload recebe um nome único (UUID), então o navegador pode guardar a imagem por muito tempo
++                .setCacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic());
+     }
+ }
+diff --git a/src/main/java/sgab/sgab/events/NotificacaoEmailListener.java b/src/main/java/sgab/sgab/events/NotificacaoEmailListener.java
+index 82b046b..19ae767 100644
+--- a/src/main/java/sgab/sgab/events/NotificacaoEmailListener.java
++++ b/src/main/java/sgab/sgab/events/NotificacaoEmailListener.java
+@@ -2,6 +2,7 @@ package sgab.sgab.events;
+ 
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
++import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.mail.MailException;
+ import org.springframework.scheduling.annotation.Async;
+ import org.springframework.stereotype.Component;
+@@ -25,8 +26,13 @@ public class NotificacaoEmailListener {
+ 
+     private final EmailService emailService;
+ 
+-    public NotificacaoEmailListener(EmailService emailService) {
++    // sgab.email.habilitado=false desliga todos os envios (útil para gerar dados de teste)
++    private final boolean habilitado;
++
++    public NotificacaoEmailListener(EmailService emailService,
++            @Value("${sgab.email.habilitado:true}") boolean habilitado) {
+         this.emailService = emailService;
++        this.habilitado = habilitado;
+     }
+ 
+     @Async
+@@ -104,6 +110,10 @@ public class NotificacaoEmailListener {
+     }
+ 
+     private void enviar(String descricao, String email, Runnable envio) {
++        if (!habilitado) {
++            log.debug("E-mails desabilitados; e-mail de {} para {} não enviado", descricao, email);
++            return;
++        }
+         try {
+             envio.run();
+             log.info("E-mail de {} enviado para {}", descricao, email);
+diff --git a/src/main/java/sgab/sgab/services/ArmazenamentoImagemService.java b/src/main/java/sgab/sgab/services/ArmazenamentoImagemService.java
+index d072c3c..18424c1 100644
+--- a/src/main/java/sgab/sgab/services/ArmazenamentoImagemService.java
++++ b/src/main/java/sgab/sgab/services/ArmazenamentoImagemService.java
+@@ -1,5 +1,10 @@
+ package sgab.sgab.services;
+ 
++import java.awt.Color;
++import java.awt.Graphics2D;
++import java.awt.RenderingHints;
++import java.awt.image.BufferedImage;
++import java.io.ByteArrayOutputStream;
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.io.UncheckedIOException;
+@@ -8,6 +13,12 @@ import java.nio.file.Path;
+ import java.nio.file.StandardCopyOption;
+ import java.util.UUID;
+ 
++import javax.imageio.IIOImage;
++import javax.imageio.ImageIO;
++import javax.imageio.ImageWriteParam;
++import javax.imageio.ImageWriter;
++import javax.imageio.stream.ImageOutputStream;
++
+ import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.stereotype.Service;
+ import org.springframework.web.multipart.MultipartFile;
+@@ -22,6 +33,10 @@ public class ArmazenamentoImagemService {
+     public static final String PREFIXO_URL = "/upload/";
+     private static final String PASTA_CAPAS = "capas";
+ 
++    // Capas são exibidas no máximo com ~400 px de largura; 600 px mantém boa qualidade em telas de alta densidade
++    private static final int LARGURA_MAXIMA = 600;
++    private static final float QUALIDADE_JPEG = 0.8f;
++
+     private final Path diretorioRaiz;
+ 
+     public ArmazenamentoImagemService(@Value("${sgab.upload.diretorio:upload}") String diretorio) {
+@@ -40,19 +55,73 @@ public class ArmazenamentoImagemService {
+         // A extensão vem do conteúdo real do arquivo, não do nome nem do Content-Type enviados pelo cliente
+         String extensao = detectarExtensao(arquivo);
+ 
+-        // Nome gerado pelo servidor: evita sobrescrever arquivos e qualquer "../" vindo do nome original
+-        String nomeArquivo = "livro-" + livroId + "-" + UUID.randomUUID() + "." + extensao;
+-
+         try {
++            // JPG e PNG são reduzidos e recomprimidos como JPG; WEBP (que o ImageIO não lê) é salvo como veio
++            byte[] otimizada = otimizarParaJpeg(arquivo);
++            if (otimizada != null) {
++                extensao = "jpg";
++            }
++
++            // Nome gerado pelo servidor: evita sobrescrever arquivos e qualquer "../" vindo do nome original
++            String nomeArquivo = "livro-" + livroId + "-" + UUID.randomUUID() + "." + extensao;
+             Path pasta = Files.createDirectories(diretorioRaiz.resolve(PASTA_CAPAS));
+-            try (InputStream entrada = arquivo.getInputStream()) {
+-                Files.copy(entrada, pasta.resolve(nomeArquivo), StandardCopyOption.REPLACE_EXISTING);
++
++            if (otimizada != null) {
++                Files.write(pasta.resolve(nomeArquivo), otimizada);
++            } else {
++                try (InputStream entrada = arquivo.getInputStream()) {
++                    Files.copy(entrada, pasta.resolve(nomeArquivo), StandardCopyOption.REPLACE_EXISTING);
++                }
+             }
++            return PREFIXO_URL + PASTA_CAPAS + "/" + nomeArquivo;
+         } catch (IOException e) {
+             throw new UncheckedIOException("Não foi possível salvar a imagem", e);
+         }
++    }
++
++    /**
++     * Reduz a imagem para no máximo LARGURA_MAXIMA px de largura e grava como JPG.
++     * Devolve null se o formato não puder ser lido pelo ImageIO (ex.: WEBP).
++     */
++    private byte[] otimizarParaJpeg(MultipartFile arquivo) throws IOException {
++        BufferedImage original;
++        try (InputStream entrada = arquivo.getInputStream()) {
++            original = ImageIO.read(entrada);
++        }
++        if (original == null) {
++            return null;
++        }
++
++        double escala = Math.min(1.0, (double) LARGURA_MAXIMA / original.getWidth());
++        int largura = Math.max(1, (int) Math.round(original.getWidth() * escala));
++        int altura = Math.max(1, (int) Math.round(original.getHeight() * escala));
+ 
+-        return PREFIXO_URL + PASTA_CAPAS + "/" + nomeArquivo;
++        BufferedImage destino = new BufferedImage(largura, altura, BufferedImage.TYPE_INT_RGB);
++        Graphics2D g = destino.createGraphics();
++        try {
++            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
++            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
++            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
++            g.setColor(Color.WHITE); // fundo branco para PNG com transparência
++            g.fillRect(0, 0, largura, altura);
++            g.drawImage(original, 0, 0, largura, altura, null);
++        } finally {
++            g.dispose();
++        }
++
++        ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
++        ImageWriteParam parametros = writer.getDefaultWriteParam();
++        parametros.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
++        parametros.setCompressionQuality(QUALIDADE_JPEG);
++
++        ByteArrayOutputStream saida = new ByteArrayOutputStream();
++        try (ImageOutputStream ios = ImageIO.createImageOutputStream(saida)) {
++            writer.setOutput(ios);
++            writer.write(null, new IIOImage(destino, null, null), parametros);
++        } finally {
++            writer.dispose();
++        }
++        return saida.toByteArray();
+     }
+ 
+     /**
+diff --git a/src/main/java/sgab/sgab/services/EmailService.java b/src/main/java/sgab/sgab/services/EmailService.java
+index 699f70f..6cce854 100644
+--- a/src/main/java/sgab/sgab/services/EmailService.java
++++ b/src/main/java/sgab/sgab/services/EmailService.java
+@@ -1,5 +1,8 @@
+ package sgab.sgab.services;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++import org.springframework.beans.factory.ObjectProvider;
+ import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.mail.SimpleMailMessage;
+ import org.springframework.mail.javamail.JavaMailSender;
+@@ -11,14 +14,17 @@ import java.time.format.DateTimeFormatter;
+ @Service
+ public class EmailService {
+ 
+-    private final JavaMailSender mailSender;
++    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
++
++    // Opcional: sem spring.mail.host configurado, a aplicação sobe e os e-mails são apenas registrados no log
++    private final ObjectProvider<JavaMailSender> mailSender;
+     private final String remetente;
+     private final String urlFrontend;
+     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+ 
+     // O remetente precisa ser a mesma conta autenticada no SMTP, senão o servidor recusa o envio
+-    public EmailService(JavaMailSender mailSender,
+-            @Value("${sgab.email.remetente:${spring.mail.username}}") String remetente,
++    public EmailService(ObjectProvider<JavaMailSender> mailSender,
++            @Value("${sgab.email.remetente:${spring.mail.username:}}") String remetente,
+             @Value("${sgab.frontend.url:http://localhost:4200}") String urlFrontend) {
+         this.mailSender = mailSender;
+         this.remetente = remetente;
+@@ -27,12 +33,18 @@ public class EmailService {
+ 
+ 
+     private void enviarMensagem(String destinatario, String assunto, String texto) {
++        JavaMailSender sender = mailSender.getIfAvailable();
++        if (sender == null) {
++            log.warn("E-mail não configurado (spring.mail.host); mensagem \"{}\" para {} não foi enviada", assunto, destinatario);
++            return;
++        }
++
+         SimpleMailMessage message = new SimpleMailMessage();
+         message.setFrom(remetente);
+         message.setTo(destinatario);
+         message.setSubject(assunto);
+         message.setText(texto);
+-        mailSender.send(message);
++        sender.send(message);
+     }
+ 
+     public void enviarEmailCriacaoConta(String destinatario, String nomeUsuario) {
+-- 
+2.43.0
+

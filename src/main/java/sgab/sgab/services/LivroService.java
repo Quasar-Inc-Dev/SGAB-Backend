@@ -141,7 +141,7 @@ public class LivroService {
 
         exemplarRepository.deleteAll(exemplarRepository.findByLivroLivroId(id));
         livroRepository.delete(livro);
-        armazenamentoImagemService.removerSeLocal(livro.getImgUrl());
+        armazenamentoImagemService.removerSeArmazenada(livro.getImgUrl());
     }
 
     @Transactional
@@ -150,7 +150,7 @@ public class LivroService {
 
         String capaAnterior = livro.getImgUrl();
         livro.setImgUrl(armazenamentoImagemService.salvarCapa(id, imagem));
-        armazenamentoImagemService.removerSeLocal(capaAnterior);
+        armazenamentoImagemService.removerSeArmazenada(capaAnterior);
 
         return converterParaResponse(livroRepository.save(livro));
     }
@@ -159,7 +159,7 @@ public class LivroService {
     public LivroResponseDTO removerCapa(Integer id) {
         Livro livro = buscarEntidadePorId(id);
 
-        armazenamentoImagemService.removerSeLocal(livro.getImgUrl());
+        armazenamentoImagemService.removerSeArmazenada(livro.getImgUrl());
         livro.setImgUrl(null);
 
         return converterParaResponse(livroRepository.save(livro));

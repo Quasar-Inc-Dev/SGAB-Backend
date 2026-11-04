@@ -2,6 +2,7 @@ package sgab.sgab.events;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -25,8 +26,13 @@ public class NotificacaoEmailListener {
 
     private final EmailService emailService;
 
-    public NotificacaoEmailListener(EmailService emailService) {
+    // sgab.email.habilitado=false desliga todos os envios (útil para gerar dados de teste)
+    private final boolean habilitado;
+
+    public NotificacaoEmailListener(EmailService emailService,
+            @Value("${sgab.email.habilitado:true}") boolean habilitado) {
         this.emailService = emailService;
+        this.habilitado = habilitado;
     }
 
     @Async
@@ -104,6 +110,10 @@ public class NotificacaoEmailListener {
     }
 
     private void enviar(String descricao, String email, Runnable envio) {
+        if (!habilitado) {
+            log.debug("E-mails desabilitados; e-mail de {} para {} não enviado", descricao, email);
+            return;
+        }
         try {
             envio.run();
             log.info("E-mail de {} enviado para {}", descricao, email);

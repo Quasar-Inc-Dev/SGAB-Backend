@@ -48,8 +48,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(h2Console).permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
-                        // Imagens públicas: a tag <img> do front não envia o token JWT
-                        .requestMatchers(HttpMethod.GET, "/upload/**").permitAll()
                         // Capa do livro: só funcionário/administrador (precisa vir antes das regras gerais de /api/livros/**)
                         .requestMatchers(HttpMethod.POST, "/api/livros/*/capa").hasAnyRole("FUNCIONARIO", "ADMINISTRADOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/livros/*/capa").hasAnyRole("FUNCIONARIO", "ADMINISTRADOR")

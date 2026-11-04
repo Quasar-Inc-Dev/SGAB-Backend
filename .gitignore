@@ -37,3 +37,6 @@ secrets.properties
 
 ### Imagens enviadas pelos usuários (capas) ###
 upload/
+
+### Docker ###
+.env
